@@ -55,16 +55,66 @@ use_item(CharName, ItemName) -->
     )},
     html(p(Output)).
 
+calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Result) :-
+    Result is (EnemyHealth / (PlayerAtk-EnemyDef)) / (PlayerHealth / (EnemyAtk-PlayerDef)).
+
+predict_power(Type, Value, NewPower) :-
+    player(PlayerName),
+    character(PlayerName, PlayerAtk, PlayerDef, PlayerHealth, _),
+    enemy(EnemyName),
+    character(EnemyName, EnemyAtk, EnemyDef, EnemyHealth, _),
+
+    ( Type == 'Attack' -> 
+        calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk+Value, EnemyDef, EnemyHealth, NewPower)
+    ; Type == 'Defense' -> 
+        calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef+Value, EnemyHealth, NewPower)
+    ; Type == 'Health' -> 
+        calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth+Value, NewPower)
+    ).
+
+best_item_finder([], BestItemName, BestItemPower) :-
+    BestItemName = '',
+    BestItemPower = -1.
+
+best_item_finder([item_power(ItemName, ItemPower) | Rest], BestItemName, BestItemPower) :-
+    best_item_finder(Rest, PrevItemName, PrevItemPower),
+    (
+        ItemPower > PrevItemPower ->
+        BestItemName = ItemName,
+        BestItemPower = ItemPower
+    ;
+        BestItemName = PrevItemName,
+        BestItemPower = PrevItemPower
+    ).
+
+best_item(Items, BestItemName, BestItemPower) :-
+    findall(item_power(ItemName, NewPower),
+            (member(item(ItemName, increase(Type, Value)), Items), 
+            predict_power(Type, Value, NewPower)),
+            PowerList),
+    
+    best_item_finder(PowerList, BestItemName, BestItemPower).
+
 enemy_action -->
-    {enemy(EnemyName),
-    character(EnemyName, _, _, _, Items),
-    (   member(item(ItemName, increase('Attack', _)), Items)
-    ->  Action = use_item(EnemyName, ItemName)
-    ;   member(item(ItemName, increase('Defense', _)), Items)
-    ->  Action = use_item(EnemyName, ItemName)
-    ;   member(item(ItemName, increase('Health', _)), Items)
-    ->  Action = use_item(EnemyName, ItemName)
-    ;   Action = enemy_attack
+    {player(PlayerName),
+    character(PlayerName, PlayerAtk, PlayerDef, PlayerHealth, _),
+    enemy(EnemyName),
+    character(EnemyName, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems),
+
+    NewPlayerHealth is PlayerHealth - (EnemyAtk - PlayerDef),
+    (
+        NewPlayerHealth < 0 ->
+        Action = enemy_attack
+    ; 
+        calc_power(PlayerAtk, PlayerDef, NewPlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Power),
+
+        best_item(EnemyItems, BestItemName, BestItemPower),
+        (
+            Power > BestItemPower ->
+            Action = enemy_attack
+        ;
+            Action = use_item(EnemyName, BestItemName)
+        )
     )},
     html(\Action).
 
