@@ -3,10 +3,13 @@
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
 :- consult('proyek.pl'). 
+
 :- http_handler(root(form), form_handler, []).
 :- http_handler(root(submit), action_handler, []).
+
 server(Port) :-
     http_server(http_dispatch, [port(Port)]).
+
 form_handler(_Request) :-
     reply_html_page(
         title('Game Actions'),
@@ -20,10 +23,16 @@ form_handler(_Request) :-
                p([], [input([type=submit, value='Submit'])])
               ])
         ]).
+
 action_handler(Request) :-
     http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
-    ( Action == 'attack' -> choose_1 ; Action == 'use_item', choose_2(ItemName) ),
-    reply_html_page(title('Action Result'), [\show_results]).
+
+    ( Action == 'attack' -> Func = choose_1 ; Action == 'use_item' -> Func = choose_2(ItemName) ),
+    reply_html_page(title('Action Result'), [
+        h2('Attacking Phase'),
+        \Func,
+        \show_results
+    ]).
     
 show_results -->
     { player(PlayerName), enemy(EnemyName), character(PlayerName, _, _, _, _), character(EnemyName, _, _, _, _) },
@@ -39,11 +48,9 @@ show_stats(CharName) -->
           p(['Health: ', CharHealth]),
           h4('Items'),
           \list_items(CharItems)]).
+
 list_items([]) --> [].
 list_items([item(Name, Effect)|T]) -->
     html([p(['- ', Name, ': ', Effect]), \list_items(T)]).
-
-choose_2(ItemName) :-
-    player(PlayerName),
-    use_item(PlayerName, ItemName).
+    
 :- initialization(server(8080)).
