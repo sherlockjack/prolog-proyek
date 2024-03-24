@@ -45,7 +45,7 @@ use_item(CharName, ItemName) -->
     ; Effect = increase('Defense', Value) ->
         NewDef is CharDef + Value,
         retractall(character(CharName, _, _, _, _)),
-        assert(character(character(CharName, CharAtk, NewDef, CharHealth, RemainingItems))),
+        assert(character(CharName, CharAtk, NewDef, CharHealth, RemainingItems)),
         swritef(Output, '%w used %w. Defense increased to %d.\n', [CharName, ItemName, NewDef])
     ; Effect = increase('Health', Value) ->
         NewHealth is CharHealth + Value,

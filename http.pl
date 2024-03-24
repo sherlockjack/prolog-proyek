@@ -35,7 +35,7 @@ action_handler(Request) :-
     ]).
     
 show_results -->
-    { player(PlayerName), enemy(EnemyName), character(PlayerName, _, _, _, _), character(EnemyName, _, _, _, _) },
+    { player(PlayerName), enemy(EnemyName) },
     html([h2('Results'),
           \show_stats(PlayerName),
           \show_stats(EnemyName)]).
