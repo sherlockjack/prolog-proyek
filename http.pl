@@ -1,17 +1,16 @@
-    :- use_module(library(http/html_write)).
-    :- use_module(library(http/thread_httpd)).
-    :- use_module(library(http/http_dispatch)).
-    :- use_module(library(http/http_parameters)).
-    :- consult('game.pl'). 
+:- use_module(library(http/html_write)).
+:- use_module(library(http/thread_httpd)).
+:- use_module(library(http/http_dispatch)).
+:- use_module(library(http/http_parameters)).
+:- consult('game.pl'). 
 
+:- http_handler(root(.),add_character_form,[]).
+:- http_handler(root(submit_characters),submit_characters_handler,[]).
+:- http_handler(root(form), form_handler, []).
+:- http_handler(root(submit), action_handler, []).
 
-    :- http_handler(root(.),add_character_form,[]).
-    :- http_handler(root(submit_characters),submit_characters_handler,[]).
-    :- http_handler(root(form), form_handler, []).
-    :- http_handler(root(submit), action_handler, []).
-
-    server(Port) :-
-        http_server(http_dispatch, [port(Port)]).
+server(Port) :-
+    http_server(http_dispatch, [port(Port)]).
 
 add_character_form(_Request) :-
 reply_html_page(
@@ -43,13 +42,13 @@ title('Add Characters'),
 submit_characters_handler(Request) :-
     http_parameters(Request, [
         player_name(PlayerName, []),
-        player_atk(PlayerAtk, []),
-        player_def(PlayerDef, []),
-        player_health(PlayerHealth, []),
+        player_atk(PlayerAtk, [integer]),
+        player_def(PlayerDef, [integer]),
+        player_health(PlayerHealth, [integer]),
         enemy_name(EnemyName, []),
-        enemy_atk(EnemyAtk, []),
-        enemy_def(EnemyDef, []),
-        enemy_health(EnemyHealth, [])
+        enemy_atk(EnemyAtk, [integer]),
+        enemy_def(EnemyDef, [integer]),
+        enemy_health(EnemyHealth, [integer])
     ]),
     create_player(PlayerName, PlayerAtk, PlayerDef, PlayerHealth),
     create_enemy(EnemyName, EnemyAtk, EnemyDef, EnemyHealth),
@@ -60,48 +59,48 @@ submit_characters_handler(Request) :-
     ]).
 
 
-    form_handler(_Request) :-
-        reply_html_page(
-            title('Game Actions'),
-            [h2('Choose Your Action'),
-            form([action='/submit', method='POST'],
-                [p([], [label([for=action], 'Action: '),
-                        select([name=action], [option([value=attack], 'Attack'),
-                                                option([value=use_item], 'Use Item')])]),
-                p([], [label([for=item_name], 'Item Name (if using item): '),
-                        input([type=text, name=item_name])]),
-                p([], [input([type=submit, value='Submit'])])
-                ])
-            ]).
-
-    action_handler(Request) :-
-        http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
-
-        ( Action == 'attack' -> Func = choose_1 ; Action == 'use_item' -> Func = choose_2(ItemName) ),
-        reply_html_page(title('Action Result'), [
-            h2('Attacking Phase'),
-            \Func,
-            \show_results
+form_handler(_Request) :-
+    reply_html_page(
+        title('Game Actions'),
+        [h2('Choose Your Action'),
+        form([action='/submit', method='POST'],
+            [p([], [label([for=action], 'Action: '),
+                    select([name=action], [option([value=attack], 'Attack'),
+                                            option([value=use_item], 'Use Item')])]),
+            p([], [label([for=item_name], 'Item Name (if using item): '),
+                    input([type=text, name=item_name])]),
+            p([], [input([type=submit, value='Submit'])])
+            ])
         ]).
-        
-    show_results -->
-        { player(PlayerName), enemy(EnemyName) },
-        html([h2('Results'),
-            \show_stats(PlayerName),
-            \show_stats(EnemyName)]).
 
-    show_stats(CharName) -->
-        { character(CharName, CharAtk, CharDef, CharHealth, CharItems) },
-        html([h3(CharName),
-            p(['Attack: ', CharAtk]),
-            p(['Defense: ', CharDef]),
-            p(['Health: ', CharHealth]),
-            h4('Items'),
-            \list_items(CharItems)]).
+action_handler(Request) :-
+    http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
 
-    list_items([]) --> [].
-    list_items([item(Name, Effect)|T]) -->
-        {swritef(S, '- %w: %w', [Name, Effect])},
-        html([p([S]), \list_items(T)]).
-        
-    :- initialization(server(8080)).
+    ( Action == 'attack' -> Func = choose_1 ; Action == 'use_item' -> Func = choose_2(ItemName) ),
+    reply_html_page(title('Action Result'), [
+        h2('Attacking Phase'),
+        \Func,
+        \show_results
+    ]).
+    
+show_results -->
+    { player(PlayerName), enemy(EnemyName) },
+    html([h2('Results'),
+        \show_stats(PlayerName),
+        \show_stats(EnemyName)]).
+
+show_stats(CharName) -->
+    { character(CharName, CharAtk, CharDef, CharHealth, CharItems) },
+    html([h3(CharName),
+        p(['Attack: ', CharAtk]),
+        p(['Defense: ', CharDef]),
+        p(['Health: ', CharHealth]),
+        h4('Items'),
+        \list_items(CharItems)]).
+
+list_items([]) --> [].
+list_items([item(Name, Effect)|T]) -->
+    {swritef(S, '- %w: %w', [Name, Effect])},
+    html([p([S]), \list_items(T)]).
+    
+:- initialization(server(8080)).

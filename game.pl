@@ -1,17 +1,17 @@
 :- consult('item.pl'). 
 :- dynamic item/2.
 :- dynamic character/5.
+:- dynamic player/1.
+:- dynamic enemy/1.
 
 % character(Name, Atk, Def, Health, Items)
-
-
 create_player(Name, Atk, Def, Health):- get_all_items(Atk, Def, Health, ItemList),
-   assert(character(Name, Atk, Def, Health, ItemList)),player(Name).
+   assert(character(Name, Atk, Def, Health, ItemList)),
+   assert(player(Name)).
 
 create_enemy(Name, Atk, Def, Health) :- get_all_items(Atk, Def, Health, ItemList),
-   assert(character(Name, Atk, Def, Health, ItemList)),enemy(Name).
-
-
+   assert(character(Name, Atk, Def, Health, ItemList)),
+   assert(enemy(Name)).
 
 player_attack --> {player(PlayerName), enemy(EnemyName)}, html(\attack(PlayerName, EnemyName)).
 enemy_attack --> {player(PlayerName), enemy(EnemyName)}, html(\attack(EnemyName, PlayerName)).
