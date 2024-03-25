@@ -4,14 +4,14 @@
 
 % character(Name, Atk, Def, Health, Items)
 
-:- get_all_items(100, 5, 1000, ItemList),
-   assert(character('Frieren', 100, 5, 1000, ItemList)).
 
-:- get_all_items(100, 5, 1000, ItemList),
-   assert(character('Serie', 100, 5, 1000, ItemList)).
+create_player(Name, Atk, Def, Health):- get_all_items(Atk, Def, Health, ItemList),
+   assert(character(Name, Atk, Def, Health, ItemList)),player(Name).
 
-player('Frieren').
-enemy('Serie').
+create_enemy(Name, Atk, Def, Health) :- get_all_items(Atk, Def, Health, ItemList),
+   assert(character(Name, Atk, Def, Health, ItemList)),enemy(Name).
+
+
 
 player_attack --> {player(PlayerName), enemy(EnemyName)}, html(\attack(PlayerName, EnemyName)).
 enemy_attack --> {player(PlayerName), enemy(EnemyName)}, html(\attack(EnemyName, PlayerName)).
