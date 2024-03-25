@@ -56,7 +56,10 @@ use_item(CharName, ItemName) -->
     html(p(Output)).
 
 calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Result) :-
-    Result is (EnemyHealth / (PlayerAtk-EnemyDef)) / (PlayerHealth / (EnemyAtk-PlayerDef)).
+    TrueEnemyAtk is EnemyAtk-PlayerDef,
+    TruePlayerAtk is PlayerAtk-EnemyDef,
+    Offset is -min(TruePlayerAtk, TrueEnemyAtk) + 1,
+    Result is (EnemyHealth / (TruePlayerAtk+Offset)) / (PlayerHealth / (TrueEnemyAtk+Offset)).
 
 predict_power(Type, Value, NewPower) :-
     player(PlayerName),
