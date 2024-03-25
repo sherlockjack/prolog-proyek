@@ -13,8 +13,16 @@ create_enemy(Name, Atk, Def, Health) :- get_all_items(Atk, Def, Health, ItemList
    assert(character(Name, Atk, Def, Health, ItemList)),
    assert(enemy(Name)).
 
-player_attack --> {player(PlayerName), enemy(EnemyName)}, html(\attack(PlayerName, EnemyName)).
-enemy_attack --> {player(PlayerName), enemy(EnemyName)}, html(\attack(EnemyName, PlayerName)).
+player_attack -->
+    {player(PlayerName), enemy(EnemyName)}, 
+    html(\attack(PlayerName, EnemyName)),
+    {check_health}.
+
+enemy_attack -->
+    {player(PlayerName), enemy(EnemyName)}, 
+    html(\attack(EnemyName, PlayerName)),
+    {check_health}.
+
 
 attack(AttackerName, DefenderName) -->
   {character(AttackerName, AttackerAtk, _, _, _),
@@ -120,6 +128,16 @@ enemy_action -->
         )
     )},
     html(\Action).
+
+    check_health :-
+        player(PlayerName),
+        enemy(EnemyName),
+        character(PlayerName, _, _, PlayerHealth, _),
+        character(EnemyName, _, _, EnemyHealth, _),
+        (PlayerHealth =< 0 -> writeln(PlayerName, ' has been defeated. Game Over!'), halt;
+         EnemyHealth =< 0 -> writeln(EnemyName, ' has been defeated. Victory!'), halt;
+         true). 
+    
 
 choose_1 -->
     html([
