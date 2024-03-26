@@ -114,7 +114,7 @@ enemy_action -->
 
     NewPlayerHealth is PlayerHealth - (EnemyAtk - PlayerDef),
     (
-        NewPlayerHealth <= 0 ->
+        NewPlayerHealth =< 0 ->
         Action = enemy_attack
     ; 
         calc_power(PlayerAtk, PlayerDef, NewPlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Power),
