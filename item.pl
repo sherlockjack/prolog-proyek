@@ -37,7 +37,8 @@ item_name('Health', 'Oracle').
 get_category_item(MaxStat, Category, ItemName, Stat) :-
     item_name(Category, ItemName),
     0 is random(4),
-    divmod(MaxStat, 5, LowerBound, _),
+    divmod(MaxStat, 5, Res, _),
+    LowerBound is Res+1,
     UpperBound is MaxStat+1,
     random(LowerBound, UpperBound, Stat).
 
