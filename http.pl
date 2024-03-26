@@ -19,36 +19,38 @@ title('Add Characters'),
     form([action='/submit_characters', method='POST'],
         [h3('Player Information'),
         p([], [label([for=player_name], 'Player Name: '),
-                input([type=text, name=player_name])]),
+                input([type=text, name=player_name, required])]),
         p([], [label([for=player_atk], 'Player Attack: '),
-                input([type=number, name=player_atk])]),
+                input([type=number, name=player_atk, min=1, required])]),
         p([], [label([for=player_def], 'Player Defense: '),
-                input([type=number, name=player_def])]),
+                input([type=number, name=player_def, min=1, required])]),
         p([], [label([for=player_health], 'Player Health: '),
-                input([type=number, name=player_health])]),
+                input([type=number, name=player_health, min=1, required])]),
         h3('Enemy Information'),
         p([], [label([for=enemy_name], 'Enemy Name: '),
-                input([type=text, name=enemy_name])]),
+                input([type=text, name=enemy_name, required])]),
         p([], [label([for=enemy_atk], 'Enemy Attack: '),
-                input([type=number, name=enemy_atk])]),
+                input([type=number, name=enemy_atk, min=1, required])]),
         p([], [label([for=enemy_def], 'Enemy Defense: '),
-                input([type=number, name=enemy_def])]),
+                input([type=number, name=enemy_def, min=1, required])]),
         p([], [label([for=enemy_health], 'Enemy Health: '),
-                input([type=number, name=enemy_health])]),
-        p([], [input([type=submit, value='Submit'])])
+                input([type=number, name=enemy_health, min=1, required])]),
+        p([], [input([type=submit, value='Submit', required])])
         ])
 ]).
 
+positive(Integer) :- Integer>0.
+
 submit_characters_handler(Request) :-
     http_parameters(Request, [
-        player_name(PlayerName, [length > 0]),
-        player_atk(PlayerAtk, [integer, number > 0]),
-        player_def(PlayerDef, [integer, number > 0]),
-        player_health(PlayerHealth, [integer, number > 0]),
-        enemy_name(EnemyName, [length > 0]),
-        enemy_atk(EnemyAtk, [integer, number > 0]),
-        enemy_def(EnemyDef, [integer, number > 0]),
-        enemy_health(EnemyHealth, [integer, number > 0])
+        player_name(PlayerName, []),
+        player_atk(PlayerAtk, [integer]),
+        player_def(PlayerDef, [integer]),
+        player_health(PlayerHealth, [integer]),
+        enemy_name(EnemyName, []),
+        enemy_atk(EnemyAtk, [integer]),
+        enemy_def(EnemyDef, [integer]),
+        enemy_health(EnemyHealth, [integer])
     ]),
     create_player(PlayerName, PlayerAtk, PlayerDef, PlayerHealth),
     create_enemy(EnemyName, EnemyAtk, EnemyDef, EnemyHealth),
