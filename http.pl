@@ -60,8 +60,6 @@ submit_characters_handler(Request) :-
         p(['Lets go to ', a([href='/form'], 'battle field'), '.'])
     ]).
 
-
-
     form_handler(Request) :-
         player(PlayerName),
         enemy(EnemyName),
@@ -92,15 +90,23 @@ submit_characters_handler(Request) :-
         ).
     
     game_form -->
+        { player(PlayerName),
+          character(PlayerName, _, _, _, PlayerItems) },
         html(form([action='/form', method='POST'],
             [
                 p([], [label([for=action], 'Action: '),
                         select([name=action], [option([value=attack], 'Attack'),
                                                 option([value=use_item], 'Use Item')])]),
                 p([], [label([for=item_name], 'Item Name (if using item): '),
-                        input([type=text, name=item_name])]),
+                        select([name=item_name], \item_options(PlayerItems))]),
                 p([], [input([type=submit, value='Submit'])])
             ])).
+    
+    item_options([]) --> [].
+    item_options([item(Name, _)|T]) -->
+        html(option([value=Name], Name)),
+        item_options(T).
+    
     
 show_results(PlayerName, EnemyName) -->
         html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).
