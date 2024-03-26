@@ -7,7 +7,9 @@
 :- http_handler(root(.),add_character_form,[]).
 :- http_handler(root(submit_characters),submit_characters_handler,[]).
 :- http_handler(root(form), form_handler, []).
-:- http_handler(root(submit), action_handler, []).
+:- http_handler(root(win), win_handler, []).
+:- http_handler(root(lose), lose_handler, []).
+
 
 server(Port) :-
     http_server(http_dispatch, [port(Port)]).
@@ -76,6 +78,7 @@ form_handler(Request) :-
                 h2('Choose Your Action'),
                 \game_form,
                 \Func, % Render the action results
+                \enemy_action,
                 \show_results(PlayerName, EnemyName)
             ]
         )
@@ -136,24 +139,24 @@ item_options([item(Name, _)|T]) -->
     html(option([value=Name], Name)),
     item_options(T).
     
+
+win_handler(_Request) :-
+    reply_html_page(
+        title('Victory!'),
+        [h1('You Win!'), p('Congratulations on your victory.')]
+    ).
+
+lose_handler(_Request) :-
+    reply_html_page(
+        title('Defeat...'),
+        [h1('You Lose'), p('Better luck next time.')]
+    ).
+
 show_results(PlayerName, EnemyName) -->
     html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).        
 
-action_handler(Request) :-
-    http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
-
-    ( Action == 'attack' -> Func = choose_1 ; Action == 'use_item' -> Func = choose_2(ItemName) ),
-    reply_html_page(title('Action Result'), [
-        h2('Attacking Phase'),
-        \Func,
-        \show_results
-    ]).
     
-show_results -->
-    { player(PlayerName), enemy(EnemyName) },
-    html([h2('Results'),
-        \show_stats(PlayerName),
-        \show_stats(EnemyName)]).
+
 
 show_stats(CharName) -->
     { character(CharName, CharAtk, CharDef, CharHealth, CharItems) },

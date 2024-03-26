@@ -129,14 +129,14 @@ enemy_action -->
     )},
     html(\Action).
 
-    check_health :-
-        player(PlayerName),
-        enemy(EnemyName),
-        character(PlayerName, _, _, PlayerHealth, _),
-        character(EnemyName, _, _, EnemyHealth, _),
-        (PlayerHealth =< 0 -> writeln(PlayerName, ' has been defeated. Game Over!'), halt;
-         EnemyHealth =< 0 -> writeln(EnemyName, ' has been defeated. Victory!'), halt;
-         true). 
+check_health :-
+    player(PlayerName),
+    enemy(EnemyName),
+    character(PlayerName, _, _, PlayerHealth, _),
+    character(EnemyName, _, _, EnemyHealth, _),
+    (PlayerHealth =< 0 -> assert(game_outcome(lose));
+     EnemyHealth =< 0 -> assert(game_outcome(win));
+     true).
     
 
 choose_1 -->
