@@ -77,8 +77,12 @@ form_handler(Request) :-
             [
                 h2('Choose Your Action'),
                 \game_form,
-                \Func, % Render the action results
+                h2('Attacking Phase'),
+                h3('Your Action'),
+                \Func,
+                h3('Enemy Action'),
                 \enemy_action,
+                h2('Result'),
                 \show_results(PlayerName, EnemyName)
             ]
         )
@@ -86,8 +90,8 @@ form_handler(Request) :-
             title('Game Actions'),
             [
                 h2('Choose Your Action'),
-                \game_form, % Only render the form initially
-                \show_results(PlayerName, EnemyName) % Show current stats
+                \game_form,
+                \show_results(PlayerName, EnemyName)
             ]
         )
     ).
@@ -155,16 +159,13 @@ lose_handler(_Request) :-
 show_results(PlayerName, EnemyName) -->
     html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).        
 
-    
-
-
 show_stats(CharName) -->
     { character(CharName, CharAtk, CharDef, CharHealth, CharItems) },
     html([h3(CharName),
         p(['Attack: ', CharAtk]),
         p(['Defense: ', CharDef]),
         p(['Health: ', CharHealth]),
-        h4('Items'),
+        h3('Items'),
         \list_items(CharItems)]).
 
 list_items([]) --> [].
