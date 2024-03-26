@@ -88,19 +88,30 @@ submit_characters_handler(Request) :-
                 ]
             )
         ).
-    
     game_form -->
         { player(PlayerName),
           character(PlayerName, _, _, _, PlayerItems) },
-        html(form([action='/form', method='POST'],
+        html(form([action='/form', method='POST', id='gameForm'],
             [
-                p([], [label([for=action], 'Action: '),
-                        select([name=action], [option([value=attack], 'Attack'),
-                                                option([value=use_item], 'Use Item')])]),
-                p([], [label([for=item_name], 'Item Name (if using item): '),
+                p([], [label([for=action_attack], 'Attack: '),
+                        input([id=action_attack, type=radio, name=action, value=attack, checked, onclick="toggleItemSelection(false)"], []), ' ',
+                     label([for=action_use_item], 'Use Item: '),
+                        input([id=action_use_item, type=radio, name=action, value=use_item, onclick="toggleItemSelection(true)"], [])]),
+                p([id=itemSelection, style='display:none;'], [label([for=item_name], 'Item Name: '),
                         select([name=item_name], \item_options(PlayerItems))]),
                 p([], [input([type=submit, value='Submit'])])
-            ])).
+            ])),
+        html(script([], "
+            function toggleItemSelection(show) {
+                var selection = document.getElementById('itemSelection');
+                if (show) {
+                    selection.style.display = 'block';
+                } else {
+                    selection.style.display = 'none';
+                }
+            }")).
+    
+    
     
     item_options([]) --> [].
     item_options([item(Name, _)|T]) -->
