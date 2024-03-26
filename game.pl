@@ -15,23 +15,20 @@ create_enemy(Name, Atk, Def, Health) :- get_all_items(Atk, Def, Health, ItemList
 
 player_attack -->
     {player(PlayerName), enemy(EnemyName)}, 
-    html(\attack(PlayerName, EnemyName)),
-    {check_health}.
+    html(\attack(PlayerName, EnemyName)).
 
 enemy_attack -->
     {player(PlayerName), enemy(EnemyName)}, 
-    html(\attack(EnemyName, PlayerName)),
-    {check_health}.
-
+    html(\attack(EnemyName, PlayerName)).
 
 attack(AttackerName, DefenderName) -->
   {character(AttackerName, AttackerAtk, _, _, _),
   character(DefenderName, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
   Damage is max(AttackerAtk - DefenderDef, 0),
   NewHealth is DefenderHealth - Damage,
+  retractall(character(DefenderName, _, _, _, _)),
+  assert(character(DefenderName, DefenderAtk, DefenderDef, NewHealth, DefenderItems)),
   ( NewHealth > 0 ->
-    retractall(character(DefenderName, _, _, _, _)),
-    assert(character(DefenderName, DefenderAtk, DefenderDef, NewHealth, DefenderItems)),
     swritef(Output, '%w attacks %w for %d damage. %w has %d health remaining.\n', 
             [AttackerName, DefenderName, Damage, DefenderName, NewHealth])
     ;
@@ -114,6 +111,10 @@ enemy_action -->
 
     NewPlayerHealth is PlayerHealth - (EnemyAtk - PlayerDef),
     (
+        EnemyHealth =< 0 ->
+        swritef(Output, '%w is already defeated!\n', [EnemyName]),
+        Action = html(p(Output))
+    ;
         NewPlayerHealth =< 0 ->
         Action = enemy_attack
     ; 
@@ -129,15 +130,51 @@ enemy_action -->
     )},
     html(\Action).
 
-check_health :-
-    player(PlayerName),
+show_game_over(Hide, Header, Output) -->
+    { swritef(HeaderScript, 'var header = "%w";', [Header]),
+      swritef(OutputScript, 'var output = "%w";', [Output]),
+      swritef(HideScript, 'var hide = %w;', [Hide]),
+      Script = "
+            if(hide) {
+                var selection = document.getElementById('gameForm');
+                selection.style.display = 'none';
+
+                var selection = document.getElementById('separator');
+                selection.style.display = 'block';
+            
+                var gameOverHeader = document.getElementById('gameOverHeader');
+                gameOverHeader.innerHTML = header;
+            
+                var gameOverText = document.getElementById('gameOverText');
+                gameOverText.innerHTML = output;
+
+                var playAgain = document.getElementById('playAgain');
+                playAgain.innerHTML = 'Play again?';
+            }
+        "
+    },
+    html(script([], [HeaderScript, OutputScript, HideScript, Script])).
+
+check_health -->
+    {player(PlayerName),
     enemy(EnemyName),
     character(PlayerName, _, _, PlayerHealth, _),
     character(EnemyName, _, _, EnemyHealth, _),
-    (PlayerHealth =< 0 -> assert(game_outcome(lose));
-     EnemyHealth =< 0 -> assert(game_outcome(win));
-     true).
-    
+    (PlayerHealth =< 0 -> 
+        swritef(Output, '%w is defeated. Better luck next time!', [PlayerName]),
+        Hide = true,
+        Header = 'Defeat'
+    ;
+     EnemyHealth =< 0 -> 
+        swritef(Output, '%w is defeated. Congratulations, you did it!', [EnemyName]),
+        Hide = true,
+        Header = 'Victory'
+    ;
+        Hide = false
+     )},
+    html([
+        \show_game_over(Hide, Header, Output)
+    ]).
 
 choose_1 -->
     html([

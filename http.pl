@@ -4,8 +4,8 @@
 :- use_module(library(http/http_parameters)).
 :- consult('game.pl'). 
 
-:- http_handler(root(.),add_character_form,[]).
-:- http_handler(root(submit_characters),submit_characters_handler,[]).
+:- http_handler(root(.), add_character_form, []).
+:- http_handler(root(submit_characters), submit_characters_handler, []).
 :- http_handler(root(form), form_handler, []).
 :- http_handler(root(win), win_handler, []).
 :- http_handler(root(lose), lose_handler, []).
@@ -15,31 +15,32 @@ server(Port) :-
     http_server(http_dispatch, [port(Port)]).
 
 add_character_form(_Request) :-
-reply_html_page(
-title('Add Characters'),
-[h2('Add New Characters'),
-    form([action='/submit_characters', method='POST'],
-        [h3('Player Information'),
-        p([], [label([for=player_name], 'Player Name: '),
-                input([type=text, name=player_name, required])]),
-        p([], [label([for=player_atk], 'Player Attack: '),
-                input([type=number, name=player_atk, min=1, required])]),
-        p([], [label([for=player_def], 'Player Defense: '),
-                input([type=number, name=player_def, min=1, required])]),
-        p([], [label([for=player_health], 'Player Health: '),
-                input([type=number, name=player_health, min=1, required])]),
-        h3('Enemy Information'),
-        p([], [label([for=enemy_name], 'Enemy Name: '),
-                input([type=text, name=enemy_name, required])]),
-        p([], [label([for=enemy_atk], 'Enemy Attack: '),
-                input([type=number, name=enemy_atk, min=1, required])]),
-        p([], [label([for=enemy_def], 'Enemy Defense: '),
-                input([type=number, name=enemy_def, min=1, required])]),
-        p([], [label([for=enemy_health], 'Enemy Health: '),
-                input([type=number, name=enemy_health, min=1, required])]),
-        p([], [input([type=submit, value='Submit', required])])
-        ])
-]).
+    retractall(character(_, _, _, _, _)),
+    reply_html_page(
+    title('Add Characters'),
+    [h2('Add New Characters'),
+        form([action='/submit_characters', method='POST'],
+            [h3('Player Information'),
+            p([], [label([for=player_name], 'Player Name: '),
+                    input([type=text, name=player_name, required])]),
+            p([], [label([for=player_atk], 'Player Attack: '),
+                    input([type=number, name=player_atk, min=1, required])]),
+            p([], [label([for=player_def], 'Player Defense: '),
+                    input([type=number, name=player_def, min=1, required])]),
+            p([], [label([for=player_health], 'Player Health: '),
+                    input([type=number, name=player_health, min=1, required])]),
+            h3('Enemy Information'),
+            p([], [label([for=enemy_name], 'Enemy Name: '),
+                    input([type=text, name=enemy_name, required])]),
+            p([], [label([for=enemy_atk], 'Enemy Attack: '),
+                    input([type=number, name=enemy_atk, min=1, required])]),
+            p([], [label([for=enemy_def], 'Enemy Defense: '),
+                    input([type=number, name=enemy_def, min=1, required])]),
+            p([], [label([for=enemy_health], 'Enemy Health: '),
+                    input([type=number, name=enemy_health, min=1, required])]),
+            p([], [input([type=submit, value='Submit', required])])
+            ])
+    ]).
 
 positive(Integer) :- Integer>0.
 
@@ -62,6 +63,13 @@ submit_characters_handler(Request) :-
         p(['Lets go to ', a([href='/form'], 'battle field'), '.'])
     ]).
 
+game_over --> html([
+    h2([id=gameOverHeader], []), 
+    p([id=gameOverText], []),
+    a([id=playAgain, href='/'], []),
+    div([id=separator, style='display:none;'], [br([], []), br([], [])])
+]).
+
 form_handler(Request) :-
     player(PlayerName),
     enemy(EnemyName),
@@ -75,7 +83,7 @@ form_handler(Request) :-
         reply_html_page(
             title('Game Actions'),
             [
-                h2('Choose Your Action'),
+                \game_over,
                 \game_form,
                 h2('Attacking Phase'),
                 h3('Your Action'),
@@ -83,13 +91,13 @@ form_handler(Request) :-
                 h3('Enemy Action'),
                 \enemy_action,
                 h2('Result'),
+                \check_health,
                 \show_results(PlayerName, EnemyName)
             ]
         )
     ;   reply_html_page(
             title('Game Actions'),
             [
-                h2('Choose Your Action'),
                 \game_form,
                 \show_results(PlayerName, EnemyName)
             ]
@@ -100,6 +108,7 @@ game_form -->
     { player(PlayerName),
       character(PlayerName, _, _, _, PlayerItems) },
     html(form([action('/form'), method('POST'), id('gameForm')], [
+        h2('Choose Your Action'),
         p([], [
             input([
                 id=action_attack,
@@ -142,19 +151,6 @@ item_options([]) --> [].
 item_options([item(Name, _)|T]) -->
     html(option([value=Name], Name)),
     item_options(T).
-    
-
-win_handler(_Request) :-
-    reply_html_page(
-        title('Victory!'),
-        [h1('You Win!'), p('Congratulations on your victory.')]
-    ).
-
-lose_handler(_Request) :-
-    reply_html_page(
-        title('Defeat...'),
-        [h1('You Lose'), p('Better luck next time.')]
-    ).
 
 show_results(PlayerName, EnemyName) -->
     html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).        
