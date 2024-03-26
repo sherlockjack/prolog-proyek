@@ -91,17 +91,35 @@ form_handler(Request) :-
 
 game_form -->
     { player(PlayerName),
-        character(PlayerName, _, _, _, PlayerItems) },
-    html(form([action='/form', method='POST', id='gameForm'],
-        [
-            p([], [label([for=action_attack], 'Attack: '),
-                    input([id=action_attack, type=radio, name=action, value=attack, checked, onclick="toggleItemSelection(false)"], []), ' ',
-                    label([for=action_use_item], 'Use Item: '),
-                    input([id=action_use_item, type=radio, name=action, value=use_item, onclick="toggleItemSelection(true)"], [])]),
-            p([id=itemSelection, style='display:none;'], [label([for=item_name], 'Item Name: '),
-                    select([name=item_name], \item_options(PlayerItems))]),
-            p([], [input([type=submit, value='Submit'])])
-        ])),
+      character(PlayerName, _, _, _, PlayerItems) },
+    html(form([action('/form'), method('POST'), id('gameForm')], [
+        p([], [
+            input([
+                id=action_attack,
+                type=radio,
+                name=action,
+                value=attack,
+                checked,
+                onclick="toggleItemSelection(false)"
+            ], []),
+            label([for=action_attack], 'Attack: ')
+        ]),
+        p([], [
+            input([
+                id=action_use_item,
+                type=radio,
+                name=action,
+                value=use_item,
+                onclick="toggleItemSelection(true)"
+            ], []),
+            label([for=action_use_item], 'Use Item: ')
+        ]),
+        p([id=itemSelection, style='display:none;'], [
+            label([for=item_name], 'Item Name: '),
+            select([name=item_name], \item_options(PlayerItems))
+        ]),
+        p([], [input([type=submit, value='Submit'])])
+    ])),
     html(script([], "
         function toggleItemSelection(show) {
             var selection = document.getElementById('itemSelection');
@@ -110,17 +128,16 @@ game_form -->
             } else {
                 selection.style.display = 'none';
             }
-        }")).
-    
+        }"
+    )).
+
 item_options([]) --> [].
 item_options([item(Name, _)|T]) -->
     html(option([value=Name], Name)),
     item_options(T).
     
-    
 show_results(PlayerName, EnemyName) -->
-        html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).
-            
+    html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).        
 
 action_handler(Request) :-
     http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
