@@ -41,14 +41,14 @@ title('Add Characters'),
 
 submit_characters_handler(Request) :-
     http_parameters(Request, [
-        player_name(PlayerName, []),
-        player_atk(PlayerAtk, [integer]),
-        player_def(PlayerDef, [integer]),
-        player_health(PlayerHealth, [integer]),
-        enemy_name(EnemyName, []),
-        enemy_atk(EnemyAtk, [integer]),
-        enemy_def(EnemyDef, [integer]),
-        enemy_health(EnemyHealth, [integer])
+        player_name(PlayerName, [length > 0]),
+        player_atk(PlayerAtk, [integer, number > 0]),
+        player_def(PlayerDef, [integer, number > 0]),
+        player_health(PlayerHealth, [integer, number > 0]),
+        enemy_name(EnemyName, [length > 0]),
+        enemy_atk(EnemyAtk, [integer, number > 0]),
+        enemy_def(EnemyDef, [integer, number > 0]),
+        enemy_health(EnemyHealth, [integer, number > 0])
     ]),
     create_player(PlayerName, PlayerAtk, PlayerDef, PlayerHealth),
     create_enemy(EnemyName, EnemyAtk, EnemyDef, EnemyHealth),
@@ -57,6 +57,7 @@ submit_characters_handler(Request) :-
         h2(Message),
         p(['Lets go to ', a([href='/form'], 'battle field'), '.'])
     ]).
+
 
 
     form_handler(Request) :-
