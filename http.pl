@@ -60,63 +60,62 @@ submit_characters_handler(Request) :-
         p(['Lets go to ', a([href='/form'], 'battle field'), '.'])
     ]).
 
-    form_handler(Request) :-
-        player(PlayerName),
-        enemy(EnemyName),
-        character(PlayerName, _, _, _, _),
-        character(EnemyName, _, _, _, _),
-        (   memberchk(method(post), Request) -> 
-            http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
-            (   Action == 'attack' -> Func = player_attack
-            ;   Action == 'use_item' -> Func = use_item(PlayerName, ItemName)
-            ),
-            reply_html_page(
-                title('Game Actions'),
-                [
-                    h2('Choose Your Action'),
-                    \game_form,
-                    \Func, % Render the action results
-                    \show_results(PlayerName, EnemyName)
-                ]
-            )
-        ;   reply_html_page(
-                title('Game Actions'),
-                [
-                    h2('Choose Your Action'),
-                    \game_form, % Only render the form initially
-                    \show_results(PlayerName, EnemyName) % Show current stats
-                ]
-            )
-        ).
-    game_form -->
-        { player(PlayerName),
-          character(PlayerName, _, _, _, PlayerItems) },
-        html(form([action='/form', method='POST', id='gameForm'],
+form_handler(Request) :-
+    player(PlayerName),
+    enemy(EnemyName),
+    character(PlayerName, _, _, _, _),
+    character(EnemyName, _, _, _, _),
+    (   memberchk(method(post), Request) -> 
+        http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
+        (   Action == 'attack' -> Func = player_attack
+        ;   Action == 'use_item' -> Func = use_item(PlayerName, ItemName)
+        ),
+        reply_html_page(
+            title('Game Actions'),
             [
-                p([], [label([for=action_attack], 'Attack: '),
-                        input([id=action_attack, type=radio, name=action, value=attack, checked, onclick="toggleItemSelection(false)"], []), ' ',
-                     label([for=action_use_item], 'Use Item: '),
-                        input([id=action_use_item, type=radio, name=action, value=use_item, onclick="toggleItemSelection(true)"], [])]),
-                p([id=itemSelection, style='display:none;'], [label([for=item_name], 'Item Name: '),
-                        select([name=item_name], \item_options(PlayerItems))]),
-                p([], [input([type=submit, value='Submit'])])
-            ])),
-        html(script([], "
-            function toggleItemSelection(show) {
-                var selection = document.getElementById('itemSelection');
-                if (show) {
-                    selection.style.display = 'block';
-                } else {
-                    selection.style.display = 'none';
-                }
-            }")).
+                h2('Choose Your Action'),
+                \game_form,
+                \Func, % Render the action results
+                \show_results(PlayerName, EnemyName)
+            ]
+        )
+    ;   reply_html_page(
+            title('Game Actions'),
+            [
+                h2('Choose Your Action'),
+                \game_form, % Only render the form initially
+                \show_results(PlayerName, EnemyName) % Show current stats
+            ]
+        )
+    ).
+
+game_form -->
+    { player(PlayerName),
+        character(PlayerName, _, _, _, PlayerItems) },
+    html(form([action='/form', method='POST', id='gameForm'],
+        [
+            p([], [label([for=action_attack], 'Attack: '),
+                    input([id=action_attack, type=radio, name=action, value=attack, checked, onclick="toggleItemSelection(false)"], []), ' ',
+                    label([for=action_use_item], 'Use Item: '),
+                    input([id=action_use_item, type=radio, name=action, value=use_item, onclick="toggleItemSelection(true)"], [])]),
+            p([id=itemSelection, style='display:none;'], [label([for=item_name], 'Item Name: '),
+                    select([name=item_name], \item_options(PlayerItems))]),
+            p([], [input([type=submit, value='Submit'])])
+        ])),
+    html(script([], "
+        function toggleItemSelection(show) {
+            var selection = document.getElementById('itemSelection');
+            if (show) {
+                selection.style.display = 'block';
+            } else {
+                selection.style.display = 'none';
+            }
+        }")).
     
-    
-    
-    item_options([]) --> [].
-    item_options([item(Name, _)|T]) -->
-        html(option([value=Name], Name)),
-        item_options(T).
+item_options([]) --> [].
+item_options([item(Name, _)|T]) -->
+    html(option([value=Name], Name)),
+    item_options(T).
     
     
 show_results(PlayerName, EnemyName) -->
