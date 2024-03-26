@@ -55,23 +55,53 @@ submit_characters_handler(Request) :-
     Message = 'Player and Enemy added successfully!',
     reply_html_page(title('Characters Added'), [
         h2(Message),
-        p(['Return to ', a([href='/form'], 'main page'), '.'])
+        p(['Lets go to ', a([href='/form'], 'battle field'), '.'])
     ]).
 
 
-form_handler(_Request) :-
-    reply_html_page(
-        title('Game Actions'),
-        [h2('Choose Your Action'),
-        form([action='/submit', method='POST'],
-            [p([], [label([for=action], 'Action: '),
-                    select([name=action], [option([value=attack], 'Attack'),
-                                            option([value=use_item], 'Use Item')])]),
-            p([], [label([for=item_name], 'Item Name (if using item): '),
-                    input([type=text, name=item_name])]),
-            p([], [input([type=submit, value='Submit'])])
-            ])
-        ]).
+    form_handler(Request) :-
+        player(PlayerName),
+        enemy(EnemyName),
+        character(PlayerName, _, _, _, _),
+        character(EnemyName, _, _, _, _),
+        (   memberchk(method(post), Request) -> 
+            http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
+            (   Action == 'attack' -> Func = player_attack
+            ;   Action == 'use_item' -> Func = use_item(PlayerName, ItemName)
+            ),
+            reply_html_page(
+                title('Game Actions'),
+                [
+                    h2('Choose Your Action'),
+                    \game_form,
+                    \Func, % Render the action results
+                    \show_results(PlayerName, EnemyName)
+                ]
+            )
+        ;   reply_html_page(
+                title('Game Actions'),
+                [
+                    h2('Choose Your Action'),
+                    \game_form, % Only render the form initially
+                    \show_results(PlayerName, EnemyName) % Show current stats
+                ]
+            )
+        ).
+    
+    game_form -->
+        html(form([action='/form', method='POST'],
+            [
+                p([], [label([for=action], 'Action: '),
+                        select([name=action], [option([value=attack], 'Attack'),
+                                                option([value=use_item], 'Use Item')])]),
+                p([], [label([for=item_name], 'Item Name (if using item): '),
+                        input([type=text, name=item_name])]),
+                p([], [input([type=submit, value='Submit'])])
+            ])).
+    
+show_results(PlayerName, EnemyName) -->
+        html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).
+            
 
 action_handler(Request) :-
     http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
