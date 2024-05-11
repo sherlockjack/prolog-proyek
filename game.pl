@@ -4,6 +4,7 @@
 :- dynamic item/2.
 :- dynamic player/1.
 :- dynamic enemy/1.
+:- dynamic temp/1.
 
 generate_stats(Atk, Def, Health, Role) :-
     random(3000, 5000, Atk),
@@ -50,8 +51,8 @@ attack(AttackerName, DefenderName) -->
     )},
     html(p(Output)).
 
-use_item(CharName, ItemName) -->
-    {character(CharName, CharRole, CharAtk, CharDef, CharHealth, CharItems),
+use_item(CharName, ItemName) :-
+    character(CharName, CharRole, CharAtk, CharDef, CharHealth, CharItems),
     member(item(ItemName, Effect), CharItems),
     select(item(ItemName, Effect), CharItems, RemainingItems),
 
@@ -70,8 +71,11 @@ use_item(CharName, ItemName) -->
         retractall(character(CharName, _, _, _, _)),
         assert(character(CharName, CharRole, CharAtk, CharDef, NewHealth, RemainingItems)),
         swritef(Output, '%w used %w. Health increased to %d.\n', [CharName, ItemName, NewHealth])
-    )},
-    html(p(Output)).
+    ),
+    assert(temp(CharName, Output)).
+
+use_item_html(CharName) -->
+    {temp(CharName, Output)}, html(p(Output)).
 
 calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Result) :-
     TrueEnemyAtk is EnemyAtk-PlayerDef,
@@ -138,7 +142,8 @@ enemy_action -->
             Power > BestItemPower ->
             Action = enemy_attack
         ;
-            Action = use_item(EnemyName, BestItemName)
+            use_item(EnemyName, BestItemName),
+            Action = use_item_html(EnemyName)
         )
     )},
     html(\Action).
@@ -188,21 +193,4 @@ check_health -->
      )},
     html([
         \show_game_over(Hide, Header, Output)
-    ]).
-
-choose_1 -->
-    html([
-        h2('Your Turn'),
-        \player_attack,
-        h2('Enemy Turn'),
-        \enemy_action
-    ]).
-
-choose_2(ItemName) -->
-    {player(PlayerName)},
-    html([
-        h2('Your Turn'),
-        \use_item(PlayerName, ItemName), 
-        h2('Enemy Turn'),
-        \enemy_action
     ]).
