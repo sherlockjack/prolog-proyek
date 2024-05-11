@@ -17,15 +17,12 @@ server(Port) :-
 add_character_form(_Request) :-
     retractall(character(_, _, _, _, _)),
     reply_html_page(
-    title('Add Characters'),
-    [h2('Add New Characters'),
+    title('Add Character'),
+    [h2('Add New Character'),
         form([action='/submit_characters', method='POST'],
             [h3('Player Information'),
             p([], [label([for=player_name], 'Player Name: '),
                     input([type=text, name=player_name, required])]),
-            h3('Enemy Information'),
-            p([], [label([for=enemy_name], 'Enemy Name: '),
-                    input([type=text, name=enemy_name, required])]),
             p([], [input([type=submit, value='Submit', required])])
             ])
     ]).
@@ -34,11 +31,10 @@ positive(Integer) :- Integer>0.
 
 submit_characters_handler(Request) :-
     http_parameters(Request, [
-        player_name(PlayerName, []),
-        enemy_name(EnemyName, [])
+        player_name(PlayerName, [])
     ]),
     create_player(PlayerName),
-    create_enemy(EnemyName),
+    create_enemy(),
     Message = 'Player and Enemy added successfully!',
     reply_html_page(title('Characters Added'), [
         h2(Message),

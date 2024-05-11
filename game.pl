@@ -1,4 +1,5 @@
 :- consult('item.pl'). 
+:- consult('enemy_names.pl'). 
 :- dynamic item/2.
 :- dynamic character/6.
 :- dynamic player/1.
@@ -19,7 +20,8 @@ create_player(Name) :-
     create_character(Name),
     assert(player(Name)).
 
-create_enemy(Name) :- 
+create_enemy() :- 
+    random_enemy_name(Name),
     create_character(Name),
     assert(enemy(Name)).
 
