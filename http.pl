@@ -59,48 +59,61 @@ game_over -->
 form_handler(Request) :-
     player(PlayerName),
     enemy(EnemyName),
-    (memberchk(method(post), Request) -> (
-    http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
-    ( Action == 'use_skill' -> (
-            use_skill(PlayerName),
-            reply_html_page(
-                title('Game Actions'),
-                [
-                    \game_form,
-                    h2('Attacking Phase'),
-                    h3('Your Action'),
-                    \use_skill_html(PlayerName),
-                    h2('Result'),
-                    \show_results(PlayerName, EnemyName)
-                ]
+    (   memberchk(method(post), Request)
+    ->  (
+            http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
+            (   Action == 'use_skill'
+            ->  (
+                    use_skill(PlayerName),
+                    reply_html_page(
+                        title('Game Actions'),
+                        [
+                            \game_form,
+                            h2('Attacking Phase'),
+                            h3('Your Action'),
+                            \use_skill_html(PlayerName),
+                            h2('Result'),
+                            \show_results(PlayerName, EnemyName)
+                        ]
+                    )
+                )
+            ;   (   Action == 'attack'
+                ->  (
+                        attack(PlayerName, EnemyName),
+                        Func = attack_html(PlayerName)
+                    )
+                ;   Action == 'use_item'
+                ->  (
+                        use_item(PlayerName, ItemName),
+                        Func = use_item_html(PlayerName)
+                    )
+                ),
+                reply_html_page(
+                    title('Game Actions'),
+                    [
+                        \game_over,
+                        \game_form,
+                        h2('Attacking Phase'),
+                        h3('Your Action'),
+                        \Func,
+                        h3('Enemy Action'),
+                        \enemy_action,
+                        h2('Result'),
+                        \check_health,
+                        \show_results(PlayerName, EnemyName)
+                    ]
+                )
             )
         )
-        ;
-       (( Action == 'attack' -> (attack(PlayerName, EnemyName), Func = attack_html(PlayerName)) ;
-       Action =='use_item' -> (use_item(PlayerName, ItemName), Func = use_item_html(PlayerName))),
-       reply_html_page(
-        title('Game Actions'),
-        [
-            \game_over,
-            \game_form,
-            h2('Attacking Phase'),
-            h3('Your Action'),
-            \Func,
-            h3('Enemy Action'),
-            \enemy_action,
-            h2('Result'),
-            \check_health,
-            \show_results(PlayerName, EnemyName)
-        ]
-    )))
-    )
     ;   reply_html_page(
             title('Game Actions'),
             [
                 \game_form,
                 \show_results(PlayerName, EnemyName)
             ]
-        )).
+        )
+    ).
+
 
 
 

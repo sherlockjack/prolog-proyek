@@ -4,6 +4,8 @@
 :- dynamic player/1.
 :- dynamic use_skill_temp/2.
 :- dynamic skill_active/1.
+:- dynamic temp_attack/2.
+:- dynamic enemy/1.
 
 role(archer, 'penjelasan archer', 3).
 role(warrior, 'penjelasan warrior', 2).
@@ -35,7 +37,7 @@ use_skill(archer, CharName) :-
     get_other_name(CharName, OtherName),
     attack(CharName, OtherName),
     temp_attack(CharName, Output),
-    assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill! I am speed!']), Output]))).
+    assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill! I am speed!']), p(Output)]))).
 
 use_skill(shielder, CharName) :- 
     assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill!. You can\'t hit me now!']), p([CharName, ' is invulnerable for 1 turn.'])]))).
@@ -53,4 +55,4 @@ use_skill(CharName) :-
 
 use_skill_html(CharName) --> 
     {use_skill_temp(CharName, Output)},
-    html(p(Output)).
+    Output.

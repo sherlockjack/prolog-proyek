@@ -2,9 +2,7 @@
 :- consult('enemy_names.pl'). 
 :- consult('role.pl'). 
 :- dynamic item/2.
-:- dynamic enemy/1.
 :- dynamic temp_item/2.
-:- dynamic temp_attack/2.
 
 generate_stats(Atk, Def, Health, Role) :-
     random(3000, 5000, Atk),
