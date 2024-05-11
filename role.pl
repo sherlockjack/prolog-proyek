@@ -1,6 +1,9 @@
 :- dynamic character/6.
 :- dynamic role/3.
 :- dynamic cooldown/2.
+:- dynamic player/1.
+:- dynamic use_skill_temp/2.
+:- dynamic skill_active/1.
 
 role(archer, 'penjelasan archer', 3).
 role(warrior, 'penjelasan warrior', 2).
@@ -25,9 +28,29 @@ decrement_cooldown(CharName) :-
     retractall(cooldown(CharName, _)),
     assert(cooldown(CharName, NewCooldown)).
 
+get_other_name(CharName, OtherName) :-
+    player(CharName) -> enemy(OtherName);player(OtherName).
+
+use_skill(archer, CharName) :-
+    get_other_name(CharName, OtherName),
+    attack(CharName, OtherName),
+    temp_attack(CharName, Output),
+    assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill! I am speed!']), Output]))).
+
+use_skill(shielder, CharName) :- 
+    assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill!. You can\'t hit me now!']), p([CharName, ' is invulnerable for 1 turn.'])]))).
+
+use_skill(warrior, CharName) :- 
+    assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill! This is sparta!']), p([CharName, ' temporarily increased their Attack by 50% for 1 turn.'])]))).
+
 use_skill(CharName) :-
     character(CharName, CharRole, _, _, _, _),
     role(CharRole, _, Cooldown),
+    use_skill(CharRole, CharName),
+    assert(skill_active(CharName)),
     retractall(cooldown(CharName, _)),
     assert(cooldown(CharName, Cooldown)).
 
+use_skill_html(CharName) --> 
+    {use_skill_temp(CharName, Output)},
+    html(p(Output)).

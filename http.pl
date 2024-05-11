@@ -55,55 +55,54 @@ game_over -->
         a([id=playAgain, href='/'], []),
         div([id=separator, style='display:none;'], [br([], []), br([], [])])
     ]).
-
+    
 form_handler(Request) :-
     player(PlayerName),
     enemy(EnemyName),
-    character(PlayerName, _, _, _, _, _),
-    character(EnemyName, _, _, _, _, _),
-    (   memberchk(method(post), Request) -> (
-            http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
-            (   Action == 'attack' -> Func = player_attack
-            ;   Action == 'use_item' -> Func = use_item_html(PlayerName)
-            ),
-            (Action == 'use_skill' ->
-                use_skill(PlayerName),
-                reply_html_page(
-                    title('Game Actions'),
-                    [
-                        \game_form,
-                        h2('Attacking Phase'),
-                        h3('Your Action'),
-                        p(PlayerName, 'used their skill!'),
-                        h2('Result'),
-                        \show_results(PlayerName, EnemyName)
-                    ]
-                )
-            ;
-                (Action == 'use_item' -> use_item(PlayerName, ItemName)),    
-                reply_html_page(
-                    title('Game Actions'),
-                    [
-                        \game_over,
-                        \game_form,
-                        h2('Attacking Phase'),
-                        h3('Your Action'),
-                        \Func,
-                        h3('Enemy Action'),
-                        \enemy_action,
-                        h2('Result'),
-                        \check_health,
-                        \show_results(PlayerName, EnemyName)
-                    ]
-                )))
+    (memberchk(method(post), Request) -> (
+    http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
+    ( Action == 'use_skill' -> (
+            use_skill(PlayerName),
+            reply_html_page(
+                title('Game Actions'),
+                [
+                    \game_form,
+                    h2('Attacking Phase'),
+                    h3('Your Action'),
+                    \use_skill_html(PlayerName),
+                    h2('Result'),
+                    \show_results(PlayerName, EnemyName)
+                ]
+            )
+        )
+        ;
+       (( Action == 'attack' -> (attack(PlayerName, EnemyName), Func = attack_html(PlayerName)) ;
+       Action =='use_item' -> (use_item(PlayerName, ItemName), Func = use_item_html(PlayerName))),
+       reply_html_page(
+        title('Game Actions'),
+        [
+            \game_over,
+            \game_form,
+            h2('Attacking Phase'),
+            h3('Your Action'),
+            \Func,
+            h3('Enemy Action'),
+            \enemy_action,
+            h2('Result'),
+            \check_health,
+            \show_results(PlayerName, EnemyName)
+        ]
+    )))
+    )
     ;   reply_html_page(
             title('Game Actions'),
             [
                 \game_form,
                 \show_results(PlayerName, EnemyName)
             ]
-        )
-    ).
+        )).
+
+
 
 use_skill_form -->
     {
@@ -115,7 +114,6 @@ use_skill_form -->
                     type=radio,
                     name=action,
                     value=use_skill,
-                    checked,
                     onclick="toggleItemSelection(false)"
                 ], []),
                 label([for=action_use_skill], 'Use Skill: ')

@@ -2,9 +2,9 @@
 :- consult('enemy_names.pl'). 
 :- consult('role.pl'). 
 :- dynamic item/2.
-:- dynamic player/1.
 :- dynamic enemy/1.
-:- dynamic temp/1.
+:- dynamic temp_item/2.
+:- dynamic temp_attack/2.
 
 generate_stats(Atk, Def, Health, Role) :-
     random(3000, 5000, Atk),
@@ -28,17 +28,27 @@ create_enemy :-
     assert(enemy(Name)).
 
 player_attack -->
-    {player(PlayerName), enemy(EnemyName)}, 
-    html(\attack(PlayerName, EnemyName)).
+    {player(PlayerName), enemy(EnemyName), attack(PlayerName, EnemyName)}, 
+    html(\attack_html(PlayerName)).
 
 enemy_attack -->
-    {player(PlayerName), enemy(EnemyName)}, 
-    html(\attack(EnemyName, PlayerName)).
+    {player(PlayerName), enemy(EnemyName), attack(EnemyName, PlayerName)}, 
+    html(\attack_html(EnemyName)).
 
-attack(AttackerName, DefenderName) -->
-    {character(AttackerName, _, AttackerAtk, _, _, _),
+turn_off_skills(CharName) :-
+    get_other_name(CharName, OtherName),
+    character(CharName, CharRole, _, _, _, _),
+    character(OtherName, OtherRole, _, _, _, _),
+    (CharRole == warrior -> retract(skill_active(CharName))),
+    ((OtherRole == shielder ; OtherRole == archer) -> retract(skill_active(CharName))).
+
+attack(AttackerName, DefenderName) :-
+    character(AttackerName, AttackerRole, AttackerAtk, _, _, _),
     character(DefenderName, DefenderRole, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
-    Damage is max(AttackerAtk - DefenderDef, 0),
+    ((DefenderRole == shielder, skill_active(DefenderName))->ModifiedAtk = AttackerAtk, ModifiedDef is 999999;
+    (AttackerRole == warrior, skill_active(AttackerName))->ModifiedAtk is AttackerAtk * 1.5, ModifiedDef = DefenderDef;
+    (DefenderRole == archer, skill_active(DefenderName))->ModifiedAtk = AttackerAtk, divmod(DefenderDef,2,ModifiedDef,_)),
+    Damage is max(ModifiedAtk - ModifiedDef, 0),
     NewHealth is DefenderHealth - Damage,
     retractall(character(DefenderName, _, _, _, _, _)),
     assert(character(DefenderName, DefenderRole, DefenderAtk, DefenderDef, NewHealth, DefenderItems)),
@@ -48,7 +58,12 @@ attack(AttackerName, DefenderName) -->
         ;
         swritef(Output, '%w attacks %w for %d damage. %w is defeated!\n', 
                 [AttackerName, DefenderName, Damage, DefenderName])
-    )},
+    ),
+    assert(temp_attack(AttackerName, Output)),
+    turn_off_skills(AttackerName).
+
+attack_html(CharName) -->
+    {temp_attack(CharName, Output)},
     html(p(Output)).
 
 use_item(CharName, ItemName) :-
@@ -72,10 +87,11 @@ use_item(CharName, ItemName) :-
         assert(character(CharName, CharRole, CharAtk, CharDef, NewHealth, RemainingItems)),
         swritef(Output, '%w used %w. Health increased to %d.\n', [CharName, ItemName, NewHealth])
     ),
-    assert(temp(CharName, Output)).
+    assert(temp_item(CharName, Output)),
+    turn_off_skills(CharName).
 
 use_item_html(CharName) -->
-    {temp(CharName, Output)}, html(p(Output)).
+    {temp_item(CharName, Output)}, html(p(Output)).
 
 calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Result) :-
     TrueEnemyAtk is EnemyAtk-PlayerDef,
