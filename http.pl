@@ -56,11 +56,26 @@ form_handler(Request) :-
     enemy(EnemyName),
     character(PlayerName, _, _, _, _, _),
     character(EnemyName, _,  _, _, _, _),
-    (   memberchk(method(post), Request) -> 
+    (   memberchk(method(post), Request) -> (
         http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
         (   Action == 'attack' -> Func = player_attack
         ;   Action == 'use_item' -> Func = use_item(PlayerName, ItemName)
+        ;   Action == 'use_skill' -> Func = html(p(PlayerName, 'used their skill!'))
         ),
+        (Action == 'use_skill' ->
+        use_skill(PlayerName),
+        reply_html_page(
+            title('Game Actions'),
+            [
+                \game_form,
+                h2('Attacking Phase'),
+                h3('Your Action'),
+                \Func,
+                h2('Result'),
+                \show_results(PlayerName, EnemyName)
+            ]
+        )
+        ;
         reply_html_page(
             title('Game Actions'),
             [
@@ -75,7 +90,7 @@ form_handler(Request) :-
                 \check_health,
                 \show_results(PlayerName, EnemyName)
             ]
-        )
+        )))
     ;   reply_html_page(
             title('Game Actions'),
             [
@@ -84,6 +99,26 @@ form_handler(Request) :-
             ]
         )
     ).
+
+use_skill_form -->
+    {
+        player(PlayerName),
+        cooldown(PlayerName, Cooldown),
+    Cooldown == 0 -> Form = html(p([], [
+            input([
+                id=action_use_skill,
+                type=radio,
+                name=action,
+                value=use_skill,
+                checked,
+                onclick="toggleItemSelection(false)"
+            ], []),
+            label([for=action_use_skill], 'Use Skill: ')
+        ]))
+        ;
+        Form = html(p(['Your skill is still in cooldown!']))},
+        html(\Form).
+
 
 game_form -->
     { player(PlayerName),
@@ -115,6 +150,7 @@ game_form -->
             label([for=item_name], 'Item Name: '),
             select([name=item_name], \item_options(PlayerItems))
         ]),
+        \use_skill_form,
         p([], [input([type=submit, value='Submit'])])
     ])),
     html(script([], "
@@ -137,9 +173,13 @@ show_results(PlayerName, EnemyName) -->
     html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).        
 
 show_stats(CharName) -->
-    { character(CharName, CharRole, CharAtk, CharDef, CharHealth, CharItems) },
+    { character(CharName, CharRole, CharAtk, CharDef, CharHealth, CharItems),
+    role(CharRole, Skill, _),
+    cooldown(CharName, Cooldown) },
     html([h3(CharName),
         p(['Role: ', CharRole]),
+        p(['Skill: ', Skill]),
+        p(['Cooldown: ', Cooldown]),
         p(['Attack: ', CharAtk]),
         p(['Defense: ', CharDef]),
         p(['Health: ', CharHealth]),

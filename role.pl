@@ -1,12 +1,12 @@
 :- dynamic character/6.
-:- dynamic role/2.
+:- dynamic role/3.
 :- dynamic cooldown/2.
 
-role(archer, 3).
-role(warrior, 2).
-role(shielder, 3).
-role(mage, 3).
-role(healer, 2).
+role(archer, 'penjelasan archer', 3).
+role(warrior, 'penjelasan warrior', 2).
+role(shielder, 'penjelasan shielder', 3).
+role(mage, 'penjelasan mage', 3).
+role(healer, 'penjelasan healer', 2).
 
 initialize_cooldowns :-
     findall(CharName, character(CharName, _, _, _, _, _), CharNames),
@@ -27,7 +27,7 @@ decrement_cooldown(CharName) :-
 
 use_skill(CharName) :-
     character(CharName, CharRole, _, _, _, _),
-    role(CharRole, Cooldown),
+    role(CharRole, _, Cooldown),
     retractall(cooldown(CharName, _)),
     assert(cooldown(CharName, Cooldown)).
 

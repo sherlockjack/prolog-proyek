@@ -9,7 +9,7 @@ generate_stats(Atk, Def, Health, Role) :-
     random(3000, 5000, Atk),
     random(500, 1000, Def),
     random(10000, 15000, Health),
-    findall(SelectRole, role(SelectRole, _), Roles),
+    findall(SelectRole, role(SelectRole, _, _), Roles),
     random_select(Role, Roles, _).
 
 create_character(Name) :-
