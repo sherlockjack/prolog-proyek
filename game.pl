@@ -1,7 +1,7 @@
 :- consult('item.pl'). 
 :- consult('enemy_names.pl'). 
+:- consult('role.pl'). 
 :- dynamic item/2.
-:- dynamic character/6.
 :- dynamic player/1.
 :- dynamic enemy/1.
 
@@ -9,7 +9,8 @@ generate_stats(Atk, Def, Health, Role) :-
     random(3000, 5000, Atk),
     random(500, 1000, Def),
     random(10000, 15000, Health),
-    random_select(Role, [archer, warrior, shielder, mage, healer], _).
+    findall(SelectRole, role(SelectRole, _), Roles),
+    random_select(Role, Roles, _).
 
 create_character(Name) :-
     generate_stats(Atk, Def, Health, Role),
@@ -20,7 +21,7 @@ create_player(Name) :-
     create_character(Name),
     assert(player(Name)).
 
-create_enemy() :- 
+create_enemy :- 
     random_enemy_name(Name),
     create_character(Name),
     assert(enemy(Name)).
@@ -168,7 +169,8 @@ show_game_over(Hide, Header, Output) -->
     html(script([], [HeaderScript, OutputScript, HideScript, Script])).
 
 check_health -->
-    {player(PlayerName),
+    {update_cooldowns,
+    player(PlayerName),
     enemy(EnemyName),
     character(PlayerName, _, _, _, PlayerHealth, _),
     character(EnemyName, _, _, _, EnemyHealth, _),

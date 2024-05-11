@@ -1,26 +1,33 @@
-:- consult('game.pl'). 
-:- dynamic role/3.
+:- dynamic character/6.
+:- dynamic role/2.
 :- dynamic cooldown/2.
 
-role(archer, double_action, 3).
-role(warrior, strong_attack, 2).
-role(shielder, high_defense, 3).
-role(mage, reflect_attack, 3).
-role(healer, heal, 2).
+role(archer, 3).
+role(warrior, 2).
+role(shielder, 3).
+role(mage, 3).
+role(healer, 2).
 
 initialize_cooldowns :-
-    findall(Name, character(Name, _, _, _, _, _), NameList),
-    maplist(assert_cooldown, NameList).
+    findall(CharName, character(CharName, _, _, _, _, _), CharNames),
+    maplist(assert_cooldown, CharNames).
 
-assert_cooldown(Name) :-
-    assert(cooldown(Name, 0)).
+assert_cooldown(CharName) :-
+    assert(cooldown(CharName, 0)).
 
 update_cooldowns :-
-    findall(Name, character(Name, _, _, _, _, _), NameList),
-    maplist(decrement_cooldown, NameList).
+    findall(CharName, character(CharName, _, _, _, _, _), CharNames),
+    maplist(decrement_cooldown, CharNames).
 
-decrement_cooldown(Name) :-
-    cooldown(Name, Current),
+decrement_cooldown(CharName) :-
+    cooldown(CharName, Current),
     NewCooldown is max(0, Current - 1),
-    retract(cooldown(Name, _)),
-    assert(cooldown(Name, NewCooldown)).
+    retractall(cooldown(CharName, _)),
+    assert(cooldown(CharName, NewCooldown)).
+
+use_skill(CharName) :-
+    character(CharName, CharRole, _, _, _, _),
+    role(CharRole, Cooldown),
+    retractall(cooldown(CharName, _)),
+    assert(cooldown(CharName, Cooldown)).
+

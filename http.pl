@@ -3,6 +3,7 @@
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
 :- consult('game.pl'). 
+:- consult('role.pl'). 
 
 :- http_handler(root(.), add_character_form, []).
 :- http_handler(root(submit_characters), submit_characters_handler, []).
@@ -33,8 +34,10 @@ submit_characters_handler(Request) :-
     http_parameters(Request, [
         player_name(PlayerName, [])
     ]),
+    retractall(character(_, _, _, _, _, _)),
     create_player(PlayerName),
-    create_enemy(),
+    create_enemy,
+    initialize_cooldowns,
     Message = 'Player and Enemy added successfully!',
     reply_html_page(title('Characters Added'), [
         h2(Message),
