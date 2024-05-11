@@ -4,14 +4,22 @@
 :- dynamic player/1.
 :- dynamic enemy/1.
 
-% character(Name, Atk, Def, Health, Items)
-create_player(Name, Atk, Def, Health):- get_all_items(Atk, Def, Health, ItemList),
-   assert(character(Name, Atk, Def, Health, ItemList)),
-   assert(player(Name)).
+generate_stats(Atk, Def, Health) :- 
+    random(3000, 5000, Atk),
+    random(500, 1000, Def),
+    random(10000, 15000, Health).
 
-create_enemy(Name, Atk, Def, Health) :- get_all_items(Atk, Def, Health, ItemList),
-   assert(character(Name, Atk, Def, Health, ItemList)),
-   assert(enemy(Name)).
+create_player(Name):- 
+    generate_stats(Atk, Def, Health),
+    get_all_items(Atk, Def, Health, ItemList),
+    assert(character(Name, Atk, Def, Health, ItemList)),
+    assert(player(Name)).
+
+create_enemy(Name) :- 
+    generate_stats(Atk, Def, Health),
+    get_all_items(Atk, Def, Health, ItemList),
+    assert(character(Name, Atk, Def, Health, ItemList)),
+    assert(enemy(Name)).
 
 player_attack -->
     {player(PlayerName), enemy(EnemyName)}, 
@@ -22,20 +30,20 @@ enemy_attack -->
     html(\attack(EnemyName, PlayerName)).
 
 attack(AttackerName, DefenderName) -->
-  {character(AttackerName, AttackerAtk, _, _, _),
-  character(DefenderName, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
-  Damage is max(AttackerAtk - DefenderDef, 0),
-  NewHealth is DefenderHealth - Damage,
-  retractall(character(DefenderName, _, _, _, _)),
-  assert(character(DefenderName, DefenderAtk, DefenderDef, NewHealth, DefenderItems)),
-  ( NewHealth > 0 ->
-    swritef(Output, '%w attacks %w for %d damage. %w has %d health remaining.\n', 
-            [AttackerName, DefenderName, Damage, DefenderName, NewHealth])
-    ;
-    swritef(Output, '%w attacks %w for %d damage. %w is defeated!\n', 
-            [AttackerName, DefenderName, Damage, DefenderName])
-  )},
-  html(p(Output)).
+    {character(AttackerName, AttackerAtk, _, _, _),
+    character(DefenderName, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
+    Damage is max(AttackerAtk - DefenderDef, 0),
+    NewHealth is DefenderHealth - Damage,
+    retractall(character(DefenderName, _, _, _, _)),
+    assert(character(DefenderName, DefenderAtk, DefenderDef, NewHealth, DefenderItems)),
+    ( NewHealth > 0 ->
+        swritef(Output, '%w attacks %w for %d damage. %w has %d health remaining.\n', 
+                [AttackerName, DefenderName, Damage, DefenderName, NewHealth])
+        ;
+        swritef(Output, '%w attacks %w for %d damage. %w is defeated!\n', 
+                [AttackerName, DefenderName, Damage, DefenderName])
+    )},
+    html(p(Output)).
 
 use_item(CharName, ItemName) -->
     {character(CharName, CharAtk, CharDef, CharHealth, CharItems),

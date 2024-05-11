@@ -23,21 +23,9 @@ add_character_form(_Request) :-
             [h3('Player Information'),
             p([], [label([for=player_name], 'Player Name: '),
                     input([type=text, name=player_name, required])]),
-            p([], [label([for=player_atk], 'Player Attack: '),
-                    input([type=number, name=player_atk, min=1, required])]),
-            p([], [label([for=player_def], 'Player Defense: '),
-                    input([type=number, name=player_def, min=1, required])]),
-            p([], [label([for=player_health], 'Player Health: '),
-                    input([type=number, name=player_health, min=1, required])]),
             h3('Enemy Information'),
             p([], [label([for=enemy_name], 'Enemy Name: '),
                     input([type=text, name=enemy_name, required])]),
-            p([], [label([for=enemy_atk], 'Enemy Attack: '),
-                    input([type=number, name=enemy_atk, min=1, required])]),
-            p([], [label([for=enemy_def], 'Enemy Defense: '),
-                    input([type=number, name=enemy_def, min=1, required])]),
-            p([], [label([for=enemy_health], 'Enemy Health: '),
-                    input([type=number, name=enemy_health, min=1, required])]),
             p([], [input([type=submit, value='Submit', required])])
             ])
     ]).
@@ -47,16 +35,10 @@ positive(Integer) :- Integer>0.
 submit_characters_handler(Request) :-
     http_parameters(Request, [
         player_name(PlayerName, []),
-        player_atk(PlayerAtk, [integer]),
-        player_def(PlayerDef, [integer]),
-        player_health(PlayerHealth, [integer]),
-        enemy_name(EnemyName, []),
-        enemy_atk(EnemyAtk, [integer]),
-        enemy_def(EnemyDef, [integer]),
-        enemy_health(EnemyHealth, [integer])
+        enemy_name(EnemyName, [])
     ]),
-    create_player(PlayerName, PlayerAtk, PlayerDef, PlayerHealth),
-    create_enemy(EnemyName, EnemyAtk, EnemyDef, EnemyHealth),
+    create_player(PlayerName),
+    create_enemy(EnemyName),
     Message = 'Player and Enemy added successfully!',
     reply_html_page(title('Characters Added'), [
         h2(Message),
@@ -169,4 +151,4 @@ list_items([item(Name, Effect)|T]) -->
     {swritef(S, '- %w: %w', [Name, Effect])},
     html([p([S]), \list_items(T)]).
     
-:- initialization(server(8080)).
+:- initialization(server(8081)).
