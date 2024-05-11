@@ -55,8 +55,8 @@ game_over --> html([
 form_handler(Request) :-
     player(PlayerName),
     enemy(EnemyName),
-    character(PlayerName, _, _, _, _),
-    character(EnemyName, _, _, _, _),
+    character(PlayerName, _, _, _, _, _),
+    character(EnemyName, _,  _, _, _, _),
     (   memberchk(method(post), Request) -> 
         http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
         (   Action == 'attack' -> Func = player_attack
@@ -88,7 +88,7 @@ form_handler(Request) :-
 
 game_form -->
     { player(PlayerName),
-      character(PlayerName, _, _, _, PlayerItems) },
+      character(PlayerName, _, _, _, _, PlayerItems) },
     html(form([action('/form'), method('POST'), id('gameForm')], [
         h2('Choose Your Action'),
         p([], [
@@ -138,8 +138,9 @@ show_results(PlayerName, EnemyName) -->
     html([ \show_stats(PlayerName), \show_stats(EnemyName) ]).        
 
 show_stats(CharName) -->
-    { character(CharName, CharAtk, CharDef, CharHealth, CharItems) },
+    { character(CharName, CharRole, CharAtk, CharDef, CharHealth, CharItems) },
     html([h3(CharName),
+        p(['Role: ', CharRole]),
         p(['Attack: ', CharAtk]),
         p(['Defense: ', CharDef]),
         p(['Health: ', CharHealth]),

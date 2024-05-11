@@ -1,24 +1,26 @@
 :- consult('item.pl'). 
 :- dynamic item/2.
-:- dynamic character/5.
+:- dynamic character/6.
 :- dynamic player/1.
 :- dynamic enemy/1.
 
-generate_stats(Atk, Def, Health) :- 
+generate_stats(Atk, Def, Health, Role) :-
     random(3000, 5000, Atk),
     random(500, 1000, Def),
-    random(10000, 15000, Health).
+    random(10000, 15000, Health),
+    random_select(Role, [archer, warrior, shielder, mage, healer], _).
 
-create_player(Name):- 
-    generate_stats(Atk, Def, Health),
+create_character(Name) :-
+    generate_stats(Atk, Def, Health, Role),
     get_all_items(Atk, Def, Health, ItemList),
-    assert(character(Name, Atk, Def, Health, ItemList)),
+    assert(character(Name, Role, Atk, Def, Health, ItemList)).
+
+create_player(Name) :-
+    create_character(Name),
     assert(player(Name)).
 
 create_enemy(Name) :- 
-    generate_stats(Atk, Def, Health),
-    get_all_items(Atk, Def, Health, ItemList),
-    assert(character(Name, Atk, Def, Health, ItemList)),
+    create_character(Name),
     assert(enemy(Name)).
 
 player_attack -->
@@ -30,12 +32,12 @@ enemy_attack -->
     html(\attack(EnemyName, PlayerName)).
 
 attack(AttackerName, DefenderName) -->
-    {character(AttackerName, AttackerAtk, _, _, _),
-    character(DefenderName, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
+    {character(AttackerName, _, AttackerAtk, _, _, _),
+    character(DefenderName, DefenderRole, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
     Damage is max(AttackerAtk - DefenderDef, 0),
     NewHealth is DefenderHealth - Damage,
-    retractall(character(DefenderName, _, _, _, _)),
-    assert(character(DefenderName, DefenderAtk, DefenderDef, NewHealth, DefenderItems)),
+    retractall(character(DefenderName, _, _, _, _, _)),
+    assert(character(DefenderName, DefenderRole, DefenderAtk, DefenderDef, NewHealth, DefenderItems)),
     ( NewHealth > 0 ->
         swritef(Output, '%w attacks %w for %d damage. %w has %d health remaining.\n', 
                 [AttackerName, DefenderName, Damage, DefenderName, NewHealth])
@@ -46,24 +48,24 @@ attack(AttackerName, DefenderName) -->
     html(p(Output)).
 
 use_item(CharName, ItemName) -->
-    {character(CharName, CharAtk, CharDef, CharHealth, CharItems),
+    {character(CharName, CharRole, CharAtk, CharDef, CharHealth, CharItems),
     member(item(ItemName, Effect), CharItems),
     select(item(ItemName, Effect), CharItems, RemainingItems),
 
     (Effect = increase('Attack', Value) ->
         NewAtk is CharAtk + Value,
-        retractall(character(CharName, _, _, _, _)),
-        assert(character(CharName, NewAtk, CharDef, CharHealth, RemainingItems)),
+        retractall(character(CharName, _, _, _, _, _)),
+        assert(character(CharName, CharRole, NewAtk, CharDef, CharHealth, RemainingItems)),
         swritef(Output, '%w used %w. Attack increased to %d.\n', [CharName, ItemName, NewAtk])
     ; Effect = increase('Defense', Value) ->
         NewDef is CharDef + Value,
         retractall(character(CharName, _, _, _, _)),
-        assert(character(CharName, CharAtk, NewDef, CharHealth, RemainingItems)),
+        assert(character(CharName, CharRole, CharAtk, NewDef, CharHealth, RemainingItems)),
         swritef(Output, '%w used %w. Defense increased to %d.\n', [CharName, ItemName, NewDef])
     ; Effect = increase('Health', Value) ->
         NewHealth is CharHealth + Value,
         retractall(character(CharName, _, _, _, _)),
-        assert(character(CharName, CharAtk, CharDef, NewHealth, RemainingItems)),
+        assert(character(CharName, CharRole, CharAtk, CharDef, NewHealth, RemainingItems)),
         swritef(Output, '%w used %w. Health increased to %d.\n', [CharName, ItemName, NewHealth])
     )},
     html(p(Output)).
@@ -76,9 +78,9 @@ calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, 
 
 predict_power(Type, Value, NewPower) :-
     player(PlayerName),
-    character(PlayerName, PlayerAtk, PlayerDef, PlayerHealth, _),
+    character(PlayerName, _, PlayerAtk, PlayerDef, PlayerHealth, _),
     enemy(EnemyName),
-    character(EnemyName, EnemyAtk, EnemyDef, EnemyHealth, _),
+    character(EnemyName, _, EnemyAtk, EnemyDef, EnemyHealth, _),
 
     ( Type == 'Attack' -> 
         calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk+Value, EnemyDef, EnemyHealth, NewPower)
@@ -113,9 +115,9 @@ best_item(Items, BestItemName, BestItemPower) :-
 
 enemy_action -->
     {player(PlayerName),
-    character(PlayerName, PlayerAtk, PlayerDef, PlayerHealth, _),
+    character(PlayerName, _, PlayerAtk, PlayerDef, PlayerHealth, _),
     enemy(EnemyName),
-    character(EnemyName, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems),
+    character(EnemyName, _, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems),
 
     NewPlayerHealth is PlayerHealth - (EnemyAtk - PlayerDef),
     (
@@ -166,8 +168,8 @@ show_game_over(Hide, Header, Output) -->
 check_health -->
     {player(PlayerName),
     enemy(EnemyName),
-    character(PlayerName, _, _, PlayerHealth, _),
-    character(EnemyName, _, _, EnemyHealth, _),
+    character(PlayerName, _, _, _, PlayerHealth, _),
+    character(EnemyName, _, _, _, EnemyHealth, _),
     (PlayerHealth =< 0 -> 
         swritef(Output, '%w is defeated. Better luck next time!', [PlayerName]),
         Hide = true,
