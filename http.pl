@@ -36,6 +36,8 @@ positive(Integer) :- Integer > 0.
 submit_characters_handler(Request) :-
     http_parameters(Request, [player_name(PlayerName, [])]),
     retractall(character(_, _, _, _, _, _)),
+    retractall(player(_)),
+    retractall(enemy(_)),
     create_player(PlayerName),
     create_enemy,
     initialize_cooldowns,
@@ -113,9 +115,6 @@ form_handler(Request) :-
             ]
         )
     ).
-
-
-
 
 use_skill_form -->
     {

@@ -37,15 +37,16 @@ turn_off_skills(CharName) :-
     get_other_name(CharName, OtherName),
     character(CharName, CharRole, _, _, _, _),
     character(OtherName, OtherRole, _, _, _, _),
-    (CharRole == warrior -> retract(skill_active(CharName))),
-    ((OtherRole == shielder ; OtherRole == archer) -> retract(skill_active(CharName))).
+    (CharRole == warrior -> retractall(skill_active(CharName)) ; true),
+    ((OtherRole == shielder ; OtherRole == archer) -> retractall(skill_active(OtherName)) ; true).
 
 attack(AttackerName, DefenderName) :-
     character(AttackerName, AttackerRole, AttackerAtk, _, _, _),
     character(DefenderName, DefenderRole, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
-    ((DefenderRole == shielder, skill_active(DefenderName))->ModifiedAtk = AttackerAtk, ModifiedDef is 999999;
-    (AttackerRole == warrior, skill_active(AttackerName))->ModifiedAtk is AttackerAtk * 1.5, ModifiedDef = DefenderDef;
-    (DefenderRole == archer, skill_active(DefenderName))->ModifiedAtk = AttackerAtk, divmod(DefenderDef,2,ModifiedDef,_)),
+    ((DefenderRole == shielder, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, ModifiedDef is 999999);
+    (AttackerRole == warrior, skill_active(AttackerName))->(ModifiedAtk is AttackerAtk * 1.5, ModifiedDef = DefenderDef);
+    (DefenderRole == archer, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, divmod(DefenderDef,2,ModifiedDef,_)); 
+    (ModifiedAtk = AttackerAtk, ModifiedDef = DefenderDef)),
     Damage is max(ModifiedAtk - ModifiedDef, 0),
     NewHealth is DefenderHealth - Damage,
     retractall(character(DefenderName, _, _, _, _, _)),
@@ -61,7 +62,7 @@ attack(AttackerName, DefenderName) :-
     turn_off_skills(AttackerName).
 
 attack_html(CharName) -->
-    {temp_attack(CharName, Output)},
+    {temp_attack(CharName, Output), retract(temp_attack(CharName, Output))},
     html(p(Output)).
 
 use_item(CharName, ItemName) :-
@@ -89,7 +90,7 @@ use_item(CharName, ItemName) :-
     turn_off_skills(CharName).
 
 use_item_html(CharName) -->
-    {temp_item(CharName, Output)}, html(p(Output)).
+    {temp_item(CharName, Output), retract(temp_item(CharName, Output))}, html(p(Output)).
 
 calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Result) :-
     TrueEnemyAtk is EnemyAtk-PlayerDef,

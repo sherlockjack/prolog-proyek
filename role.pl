@@ -6,12 +6,11 @@
 :- dynamic skill_active/1.
 :- dynamic temp_attack/2.
 :- dynamic enemy/1.
+:- dynamic debug/1.
 
 role(archer, 'penjelasan archer', 3).
 role(warrior, 'penjelasan warrior', 2).
 role(shielder, 'penjelasan shielder', 3).
-role(mage, 'penjelasan mage', 3).
-role(healer, 'penjelasan healer', 2).
 
 initialize_cooldowns :-
     findall(CharName, character(CharName, _, _, _, _, _), CharNames),
@@ -37,13 +36,14 @@ use_skill(archer, CharName) :-
     get_other_name(CharName, OtherName),
     attack(CharName, OtherName),
     temp_attack(CharName, Output),
-    assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill! I am speed!']), p(Output)]))).
+    retract(temp_attack(CharName, Output)),
+    assert(use_skill_temp(CharName, html([p([CharName, ' activated their skill! I am speed!']), p(Output), p([CharName, ' temporarily decreased their Defense by 50% for 1 turn.'])]))).
 
 use_skill(shielder, CharName) :- 
-    assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill!. You can\'t hit me now!']), p([CharName, ' is invulnerable for 1 turn.'])]))).
+    assert(use_skill_temp(CharName, html([p([CharName, ' activated their skill!. You can\'t hit me now!']), p([CharName, ' is invulnerable for 1 turn.'])]))).
 
 use_skill(warrior, CharName) :- 
-    assert(use_skill_temp(CharName, html([p([CharName, 'activated their skill! This is sparta!']), p([CharName, ' temporarily increased their Attack by 50% for 1 turn.'])]))).
+    assert(use_skill_temp(CharName, html([p([CharName, ' activated their skill! This is sparta!']), p([CharName, ' temporarily increased their Attack by 50% for 1 turn.'])]))).
 
 use_skill(CharName) :-
     character(CharName, CharRole, _, _, _, _),
@@ -54,5 +54,5 @@ use_skill(CharName) :-
     assert(cooldown(CharName, Cooldown)).
 
 use_skill_html(CharName) --> 
-    {use_skill_temp(CharName, Output)},
+    {use_skill_temp(CharName, Output), retract(use_skill_temp(CharName, Output))},
     Output.
