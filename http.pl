@@ -70,6 +70,7 @@ form_handler(Request) :-
                     reply_html_page(
                         title('Game Actions'),
                         [
+                            div(id('content'), []),
                             h2('Attacking Phase'),
                             h3('Your Action'),
                             \use_skill_html(PlayerName),
@@ -100,6 +101,7 @@ form_handler(Request) :-
                 reply_html_page(
                     title('Game Actions'),
                     [
+                        div(id('content'), []),
                         \game_over,
                         h2('Attacking Phase'),
                         h3('Your Action'),
@@ -118,6 +120,7 @@ form_handler(Request) :-
     ;   reply_html_page(
             title('Game Actions'),
             [
+                        div(id('content'), []),
                 \show_results(PlayerName, EnemyName),
                 \game_form
             ]
@@ -186,6 +189,12 @@ game_form -->
             } else {
                 selection.style.display = 'none';
             }
+        }
+       
+        var form = document.getElementById('gameForm');
+        var content = document.getElementById('content');
+        if(form && content) {
+            content.parentNode.insertBefore(form, content);
         }"
     )).
 
