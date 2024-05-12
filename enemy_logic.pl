@@ -1,3 +1,5 @@
+:- dynamic action/2.
+
 evaluate_position(Value) :-
     player(PlayerName),
     character(PlayerName, _, _, _, PlayerHealth, _),
@@ -19,12 +21,23 @@ calc_value(Value) :-
 
 possible_action(CharName, Action) :-
     get_other_name(CharName, OtherName),
-    Action = attack(CharName, OtherName).
+    Action = action(attack(CharName, OtherName), false).
 
 possible_action(CharName, Action) :-
     character(CharName, _, _, _, _, Items),
     member(item(ItemName, _), Items),
-    Action = use_item(CharName, ItemName).
+    Action = action(use_item(CharName, ItemName), false).
+
+possible_action(CharName, Action) :-
+    cooldown(CharName, 0),
+    get_other_name(CharName, OtherName),
+    Action = action(attack(CharName, OtherName), true).
+
+possible_action(CharName, Action) :-
+    cooldown(CharName, 0),
+    character(CharName, _, _, _, _, Items),
+    member(item(ItemName, _), Items),
+    Action = action(use_item(CharName, ItemName), true).
 
 store_state(Status) :-
     player(PlayerName),
@@ -47,6 +60,13 @@ restore_state(Status) :-
     assert(character(EnemyName, EnemyRole, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems)),
     assert(cooldown(PlayerName, PlayerCooldown)),
     assert(cooldown(EnemyName, EnemyCooldown)).
+
+apply_action(CharName, action(Action, UseSkill)) :-
+    (UseSkill == true -> use_skill(CharName); true),
+    Action,
+    retractall(temp_item(_, _)),
+    retractall(use_skill_temp(_, _)),
+    retractall(temp_attack(_, _)).
 
 minimax(CharName, Depth, Alpha, Beta, MaxPlayer, BestAction, Value) :-
     player(PlayerName),
@@ -72,7 +92,7 @@ minimax(CharName, Depth, Alpha, Beta, MaxPlayer, BestAction, Value) :-
 max_value([], _, _, _, _, empty_action, -inf).
 max_value([Action|Actions], CharName, Depth, Alpha, Beta, BestAction, Value) :-
     store_state(Status),
-    Action,
+    apply_action(CharName, Action),
     NewDepth is Depth - 1,
     get_other_name(CharName, NewCharName),
     minimax(NewCharName, NewDepth, Alpha, Beta, false, _, ActionValue),
@@ -92,7 +112,7 @@ max_value([Action|Actions], CharName, Depth, Alpha, Beta, BestAction, Value) :-
 min_value([], _, _, _, _, empty_action, inf).
 min_value([Action|Actions], CharName, Depth, Alpha, Beta, BestAction, Value) :-
     store_state(Status),
-    Action,
+    apply_action(CharName, Action),
     NewDepth is Depth - 1,
     get_other_name(CharName, NewCharName),
     minimax(NewCharName, NewDepth, Alpha, Beta, true, _, ActionValue),
@@ -114,4 +134,33 @@ start :-
     create_enemy,
     initialize_cooldowns.
 
-% minimax(test, 3, -inf, inf, true, BestAction, _). 
+enemy_choice(Action) --> 
+    {
+        enemy(EnemyName), 
+        Action, 
+        (
+            Action == use_item(EnemyName, _) ->
+                Result = use_item_html(EnemyName);
+            Result = attack_html(EnemyName)
+        ),
+        swritef(Output, '%w', [Action])
+    }, 
+    html(\Result).
+
+enemy_action -->
+    {
+        enemy(EnemyName),
+        once(minimax(EnemyName, 3, -inf, inf, true, action(Action, UseSkill), _)), 
+        (
+            UseSkill == true -> 
+                (
+                    use_skill(EnemyName), 
+                    Result = [
+                        \use_skill_html(EnemyName), 
+                        \enemy_choice(Action)
+                    ]
+                ); 
+            Result = enemy_choice(Action)
+        )
+    },
+    html(\Result).

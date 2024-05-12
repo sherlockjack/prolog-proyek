@@ -1,7 +1,6 @@
 :- consult('item.pl'). 
 :- consult('enemy_names.pl'). 
-:- consult('role.pl'). 
-:- dynamic item/2.
+:- consult('role.pl').
 :- dynamic temp_item/2.
 
 generate_stats(Atk, Def, Health, Role) :-
@@ -43,7 +42,7 @@ turn_off_skills(CharName) :-
 attack(AttackerName, DefenderName) :-
     character(AttackerName, AttackerRole, AttackerAtk, _, _, _),
     character(DefenderName, DefenderRole, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
-    ((DefenderRole == shielder, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, ModifiedDef is inf);
+    ((DefenderRole == shielder, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, ModifiedDef = AttackerAtk);
     (AttackerRole == warrior, skill_active(AttackerName))->(ModifiedAtk is AttackerAtk * 1.5, ModifiedDef = DefenderDef);
     (DefenderRole == archer, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, divmod(DefenderDef,2,ModifiedDef,_)); 
     (ModifiedAtk = AttackerAtk, ModifiedDef = DefenderDef)),

@@ -1,13 +1,11 @@
 :- consult('enemy_logic.pl'). 
 :- dynamic character/6.
-:- dynamic role/3.
 :- dynamic cooldown/2.
 :- dynamic player/1.
 :- dynamic use_skill_temp/2.
 :- dynamic skill_active/1.
 :- dynamic temp_attack/2.
 :- dynamic enemy/1.
-:- dynamic debug/1.
 
 role(archer, 'penjelasan archer', 3).
 role(warrior, 'penjelasan warrior', 2).
