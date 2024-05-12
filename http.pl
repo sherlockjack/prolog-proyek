@@ -62,11 +62,9 @@ form_handler(Request) :-
     player(PlayerName),
     enemy(EnemyName),
     (   memberchk(method(post), Request)
-    ->  (
-            http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
+    ->  (   http_parameters(Request, [action(Action, []), item_name(ItemName, [optional(true)])]),
             (   Action == 'use_skill'
-            ->  (
-                    use_skill(PlayerName),
+            ->  (   use_skill(PlayerName),
                     reply_html_page(
                         title('Game Actions'),
                         [
@@ -80,24 +78,41 @@ form_handler(Request) :-
                         ]
                     )
                 )
-            ;   ((   Action == 'attack'
-                ->  (
-                        attack(PlayerName, EnemyName),
-                        temp_attack(PlayerName, Output1)
+            ;   (   Action == 'attack'
+                ->  (   attack(PlayerName, EnemyName),
+                        temp_attack(PlayerName, Output1),
+                        retract(temp_attack(PlayerName, Output1))
                     )
                 ;   Action == 'use_item'
-                ->  (
-                        use_item(PlayerName, ItemName),
-                        temp_item(PlayerName, Output1)
+                ->  (   use_item(PlayerName, ItemName),
+                        temp_item(PlayerName, Output1),
+                        retract(temp_item(PlayerName, Output1))
                     )
                 ),
                 character(EnemyName, _, _, _, EnemyHealth, _),
-                (EnemyHealth > 0 -> (enemy_action(EnemyAction, UseSkill),
-                ((UseSkill == true) -> (use_skill(EnemyName), use_skill_temp(EnemyName, Output2)); Output2 = ''),
-                EnemyAction,
-                (
-                    (EnemyAction = use_item(_, _)) -> temp_item(EnemyName, Output3); temp_attack(EnemyName, Output3)
-                ));(swritef(Output2, '%w is defeated!', [EnemyName]),Output3='')),
+                (   EnemyHealth > 0
+                ->  (   enemy_action(EnemyAction, UseSkill),
+                        (   UseSkill == true
+                        ->  (   use_skill(EnemyName),
+                                use_skill_temp(EnemyName, Output2),
+                                retract(use_skill_temp(EnemyName, Output2))
+                            )
+                        ;   Output2 = ''
+                        ),
+                        EnemyAction,
+                        (   EnemyAction = use_item(_, _)
+                        ->  (   temp_item(EnemyName, Output3),
+                                retract(temp_item(EnemyName, Output3))
+                            )
+                        ;   (   temp_attack(EnemyName, Output3),
+                                retract(temp_attack(EnemyName, Output3))
+                            )
+                        )
+                    )
+                ;   (   swritef(Output2, '%w is defeated!', [EnemyName]),
+                        Output3 = ''
+                    )
+                ),
                 reply_html_page(
                     title('Game Actions'),
                     [
@@ -114,13 +129,13 @@ form_handler(Request) :-
                         \game_form,
                         \check_health
                     ]
-                ))
+                )
             )
         )
     ;   reply_html_page(
             title('Game Actions'),
             [
-                        div(id('content'), []),
+                div(id('content'), []),
                 \show_results(PlayerName, EnemyName),
                 \game_form
             ]

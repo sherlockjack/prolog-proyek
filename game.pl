@@ -2,7 +2,6 @@
 :- consult('enemy_names.pl'). 
 :- consult('role.pl').
 :- dynamic temp_item/2.
-:- dynamic output/1.
 
 generate_stats(Atk, Def, Health, Role) :-
     random(1500, 2500, Atk),
@@ -25,14 +24,6 @@ create_enemy :-
     random_enemy_name(Name),
     create_character(Name),
     assert(enemy(Name)).
-
-player_attack -->
-    {player(PlayerName), enemy(EnemyName), attack(PlayerName, EnemyName)}, 
-    html(\attack_html(PlayerName)).
-
-enemy_attack -->
-    {player(PlayerName), enemy(EnemyName), attack(EnemyName, PlayerName)}, 
-    html(\attack_html(EnemyName)).
 
 turn_off_skills(CharName) :-
     get_other_name(CharName, OtherName),
@@ -62,10 +53,6 @@ attack(AttackerName, DefenderName) :-
     assert(temp_attack(AttackerName, Output)),
     turn_off_skills(AttackerName).
 
-attack_html(CharName) -->
-    {temp_attack(CharName, Output), retract(temp_attack(CharName, Output))},
-    html(p(Output)).
-
 use_item(CharName, ItemName) :-
     character(CharName, CharRole, CharAtk, CharDef, CharHealth, CharItems),
     member(item(ItemName, Effect), CharItems),
@@ -89,32 +76,6 @@ use_item(CharName, ItemName) :-
     ),
     assert(temp_item(CharName, Output)),
     turn_off_skills(CharName).
-
-use_item_html(CharName) -->
-    {temp_item(CharName, Output), retract(temp_item(CharName, Output))}, html(p(Output)).
-
-best_item_finder([], BestItemName, BestItemPower) :-
-    BestItemName = '',
-    BestItemPower = -1.
-
-best_item_finder([item_power(ItemName, ItemPower) | Rest], BestItemName, BestItemPower) :-
-    best_item_finder(Rest, PrevItemName, PrevItemPower),
-    (
-        ItemPower > PrevItemPower ->
-        BestItemName = ItemName,
-        BestItemPower = ItemPower
-    ;
-        BestItemName = PrevItemName,
-        BestItemPower = PrevItemPower
-    ).
-
-best_item(Items, BestItemName, BestItemPower) :-
-    findall(item_power(ItemName, NewPower),
-            (member(item(ItemName, increase(Type, Value)), Items), 
-            predict_power(Type, Value, NewPower)),
-            PowerList),
-    
-    best_item_finder(PowerList, BestItemName, BestItemPower).
 
 show_game_over(Hide, Header, Output) -->
     { swritef(HeaderScript, 'var header = "%w";', [Header]),
@@ -162,5 +123,3 @@ check_health -->
     html([
         \show_game_over(Hide, Header, Output)
     ]).
-
-empty_html --> html(p('')).

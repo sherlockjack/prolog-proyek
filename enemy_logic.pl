@@ -135,11 +135,6 @@ min_value([Action|Actions], CharName, Depth, Alpha, Beta, BestAction, Value) :-
       )
     ).
 
-start :-
-    create_player(test),
-    create_enemy,
-    initialize_cooldowns.
-
 enemy_action(Action, UseSkill) :-
     enemy(EnemyName),
     once(minimax(EnemyName, 3, -inf, inf, true, action(Action, UseSkill), _)).
