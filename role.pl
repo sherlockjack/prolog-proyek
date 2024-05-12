@@ -7,9 +7,9 @@
 :- dynamic temp_attack/2.
 :- dynamic enemy/1.
 
-role(archer, 'penjelasan archer', 3).
-role(warrior, 'penjelasan warrior', 2).
-role(shielder, 'penjelasan shielder', 3).
+role(archer, 'Attack without using turn once, but decreases defense by 50% for next turn', 3).
+role(warrior, 'Increases attack by 50% for 1 turn', 2).
+role(shielder, 'Become invulnerable (take no damage) for 1 turn', 3).
 
 initialize_cooldowns :-
     findall(CharName, character(CharName, _, _, _, _, _), CharNames),
