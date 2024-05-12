@@ -1,3 +1,4 @@
+:- consult('enemy_logic.pl'). 
 :- dynamic character/6.
 :- dynamic role/3.
 :- dynamic cooldown/2.

@@ -43,7 +43,7 @@ turn_off_skills(CharName) :-
 attack(AttackerName, DefenderName) :-
     character(AttackerName, AttackerRole, AttackerAtk, _, _, _),
     character(DefenderName, DefenderRole, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
-    ((DefenderRole == shielder, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, ModifiedDef is 999999);
+    ((DefenderRole == shielder, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, ModifiedDef is inf);
     (AttackerRole == warrior, skill_active(AttackerName))->(ModifiedAtk is AttackerAtk * 1.5, ModifiedDef = DefenderDef);
     (DefenderRole == archer, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, divmod(DefenderDef,2,ModifiedDef,_)); 
     (ModifiedAtk = AttackerAtk, ModifiedDef = DefenderDef)),
@@ -92,26 +92,6 @@ use_item(CharName, ItemName) :-
 use_item_html(CharName) -->
     {temp_item(CharName, Output), retract(temp_item(CharName, Output))}, html(p(Output)).
 
-calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Result) :-
-    TrueEnemyAtk is EnemyAtk-PlayerDef,
-    TruePlayerAtk is PlayerAtk-EnemyDef,
-    Offset is -min(TruePlayerAtk, TrueEnemyAtk) + 1,
-    Result is (EnemyHealth / (TruePlayerAtk+Offset)) / (PlayerHealth / (TrueEnemyAtk+Offset)).
-
-predict_power(Type, Value, NewPower) :-
-    player(PlayerName),
-    character(PlayerName, _, PlayerAtk, PlayerDef, PlayerHealth, _),
-    enemy(EnemyName),
-    character(EnemyName, _, EnemyAtk, EnemyDef, EnemyHealth, _),
-
-    ( Type == 'Attack' -> 
-        calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk+Value, EnemyDef, EnemyHealth, NewPower)
-    ; Type == 'Defense' -> 
-        calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef+Value, EnemyHealth, NewPower)
-    ; Type == 'Health' -> 
-        calc_power(PlayerAtk, PlayerDef, PlayerHealth, EnemyAtk, EnemyDef, EnemyHealth+Value, NewPower)
-    ).
-
 best_item_finder([], BestItemName, BestItemPower) :-
     BestItemName = '',
     BestItemPower = -1.
@@ -134,34 +114,6 @@ best_item(Items, BestItemName, BestItemPower) :-
             PowerList),
     
     best_item_finder(PowerList, BestItemName, BestItemPower).
-
-enemy_action -->
-    {player(PlayerName),
-    character(PlayerName, _, PlayerAtk, PlayerDef, PlayerHealth, _),
-    enemy(EnemyName),
-    character(EnemyName, _, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems),
-
-    NewPlayerHealth is PlayerHealth - (EnemyAtk - PlayerDef),
-    (
-        EnemyHealth =< 0 ->
-        swritef(Output, '%w is already defeated!\n', [EnemyName]),
-        Action = html(p(Output))
-    ;
-        NewPlayerHealth =< 0 ->
-        Action = enemy_attack
-    ; 
-        calc_power(PlayerAtk, PlayerDef, NewPlayerHealth, EnemyAtk, EnemyDef, EnemyHealth, Power),
-
-        best_item(EnemyItems, BestItemName, BestItemPower),
-        (
-            Power > BestItemPower ->
-            Action = enemy_attack
-        ;
-            use_item(EnemyName, BestItemName),
-            Action = use_item_html(EnemyName)
-        )
-    )},
-    html(\Action).
 
 show_game_over(Hide, Header, Output) -->
     { swritef(HeaderScript, 'var header = "%w";', [Header]),
