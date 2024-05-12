@@ -54,4 +54,4 @@ use_skill(CharName) :-
 
 use_skill_html(CharName) --> 
     {use_skill_temp(CharName, Output), retract(use_skill_temp(CharName, Output))},
-    Output.
+    html(p(Output)).

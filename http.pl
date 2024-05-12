@@ -79,7 +79,7 @@ form_handler(Request) :-
                         ]
                     )
                 )
-            ;   (   Action == 'attack'
+            ;   ((   Action == 'attack'
                 ->  (
                         attack(PlayerName, EnemyName),
                         Func = attack_html(PlayerName)
@@ -90,6 +90,11 @@ form_handler(Request) :-
                         Func = use_item_html(PlayerName)
                     )
                 ),
+                enemy_action(EnemyAction, UseSkill),
+                ((UseSkill == true) -> Func2 = (use_skill_html(EnemyName)); (Func2 = empty_html)),
+                (
+                    (EnemyAction == use_item(_, _)) -> (Func3 = use_item_html(EnemyName)); Func3 = (attack_html(EnemyName))
+                ),
                 reply_html_page(
                     title('Game Actions'),
                     [
@@ -99,12 +104,13 @@ form_handler(Request) :-
                         h3('Your Action'),
                         \Func,
                         h3('Enemy Action'),
-                        \enemy_action,
+                        \Func2,
+                        \Func3,
                         h2('Result'),
                         \check_health,
                         \show_results(PlayerName, EnemyName)
                     ]
-                )
+                ))
             )
         )
     ;   reply_html_page(

@@ -2,6 +2,7 @@
 :- consult('enemy_names.pl'). 
 :- consult('role.pl').
 :- dynamic temp_item/2.
+:- dynamic output/1.
 
 generate_stats(Atk, Def, Health, Role) :-
     random(3000, 5000, Atk),
@@ -85,6 +86,7 @@ use_item(CharName, ItemName) :-
         assert(character(CharName, CharRole, CharAtk, CharDef, NewHealth, RemainingItems)),
         swritef(Output, '%w used %w. Health increased to %d.\n', [CharName, ItemName, NewHealth])
     ),
+    assert(output(Output)),
     assert(temp_item(CharName, Output)),
     turn_off_skills(CharName).
 
@@ -160,3 +162,5 @@ check_health -->
     html([
         \show_game_over(Hide, Header, Output)
     ]).
+
+empty_html --> html(p('')).

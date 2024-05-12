@@ -66,7 +66,8 @@ apply_action(CharName, action(Action, UseSkill)) :-
     Action,
     retractall(temp_item(_, _)),
     retractall(use_skill_temp(_, _)),
-    retractall(temp_attack(_, _)).
+    retractall(temp_attack(_, _)),
+    retractall(output(_)).
 
 minimax(CharName, Depth, Alpha, Beta, MaxPlayer, BestAction, Value) :-
     player(PlayerName),
@@ -134,33 +135,11 @@ start :-
     create_enemy,
     initialize_cooldowns.
 
-enemy_choice(Action) --> 
-    {
-        enemy(EnemyName), 
-        Action, 
-        (
-            Action == use_item(EnemyName, _) ->
-                Result = use_item_html(EnemyName);
-            Result = attack_html(EnemyName)
-        ),
-        swritef(Output, '%w', [Action])
-    }, 
-    html(\Result).
-
-enemy_action -->
-    {
-        enemy(EnemyName),
-        once(minimax(EnemyName, 3, -inf, inf, true, action(Action, UseSkill), _)), 
-        (
-            UseSkill == true -> 
-                (
-                    use_skill(EnemyName), 
-                    Result = [
-                        \use_skill_html(EnemyName), 
-                        \enemy_choice(Action)
-                    ]
-                ); 
-            Result = enemy_choice(Action)
-        )
-    },
-    html(\Result).
+enemy_action(Action, UseSkill) :-
+    player(PlayerName),
+    enemy(EnemyName),
+    once(minimax(EnemyName, 3, -inf, inf, true, action(Action, UseSkill), _)), 
+    (
+        (UseSkill == true -> use_skill(EnemyName); true),
+        (Action == use_item(EnemyName, ItemName) -> use_item(EnemyName, ItemName); attack(EnemyName, PlayerName))
+    ).
