@@ -3,9 +3,9 @@
 evaluate_position(Value) :-
     player(PlayerName),
     character(PlayerName, _, _, _, PlayerHealth, _),
-    PlayerHealth =< 0 -> Value = -inf
+    PlayerHealth =< 0 -> Value = inf
     ;
-    (enemy(EnemyName), character(EnemyName, _, _, _, EnemyHealth, _), EnemyHealth =< 0) -> Value = inf
+    (enemy(EnemyName), character(EnemyName, _, _, _, EnemyHealth, _), EnemyHealth =< 0) -> Value = -inf
     ;
     calc_value(Value).
 
@@ -46,20 +46,25 @@ store_state(Status) :-
     character(EnemyName, EnemyRole, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems),
     cooldown(PlayerName, PlayerCooldown),
     cooldown(EnemyName, EnemyCooldown),
-    PlayerStatus = [PlayerName, PlayerRole, PlayerAtk, PlayerDef, PlayerHealth, PlayerItems, PlayerCooldown],
-    EnemyStatus = [EnemyName, EnemyRole, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems, EnemyCooldown],
+    skill_active(PlayerName, PlayerActive),
+    skill_active(EnemyName, EnemyActive),
+    PlayerStatus = [PlayerName, PlayerRole, PlayerAtk, PlayerDef, PlayerHealth, PlayerItems, PlayerCooldown, PlayerActive],
+    EnemyStatus = [EnemyName, EnemyRole, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems, EnemyCooldown, EnemyActive],
     Status = [PlayerStatus, EnemyStatus].
 
 restore_state(Status) :-
     Status = [PlayerStatus, EnemyStatus],
-    PlayerStatus = [PlayerName, PlayerRole, PlayerAtk, PlayerDef, PlayerHealth, PlayerItems, PlayerCooldown],
-    EnemyStatus = [EnemyName, EnemyRole, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems, EnemyCooldown],
+    PlayerStatus = [PlayerName, PlayerRole, PlayerAtk, PlayerDef, PlayerHealth, PlayerItems, PlayerCooldown, PlayerActive],
+    EnemyStatus = [EnemyName, EnemyRole, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems, EnemyCooldown, EnemyActive],
     retractall(character(_, _, _, _, _, _)),
     retractall(cooldown(_, _)),
+    retractall(skill_active(_, _)),
     assert(character(PlayerName, PlayerRole, PlayerAtk, PlayerDef, PlayerHealth, PlayerItems)),
     assert(character(EnemyName, EnemyRole, EnemyAtk, EnemyDef, EnemyHealth, EnemyItems)),
     assert(cooldown(PlayerName, PlayerCooldown)),
-    assert(cooldown(EnemyName, EnemyCooldown)).
+    assert(cooldown(EnemyName, EnemyCooldown)),
+    assert(skill_active(PlayerName, PlayerActive)),
+    assert(skill_active(EnemyName, EnemyActive)).
 
 apply_action(CharName, action(Action, UseSkill)) :-
     (UseSkill == true -> use_skill(CharName); true),
@@ -136,10 +141,5 @@ start :-
     initialize_cooldowns.
 
 enemy_action(Action, UseSkill) :-
-    player(PlayerName),
     enemy(EnemyName),
-    once(minimax(EnemyName, 3, -inf, inf, true, action(Action, UseSkill), _)), 
-    (
-        (UseSkill == true -> use_skill(EnemyName); true),
-        (Action == use_item(EnemyName, ItemName) -> use_item(EnemyName, ItemName); attack(EnemyName, PlayerName))
-    ).
+    once(minimax(EnemyName, 3, -inf, inf, true, action(Action, UseSkill), _)).

@@ -3,7 +3,7 @@
 :- dynamic cooldown/2.
 :- dynamic player/1.
 :- dynamic use_skill_temp/2.
-:- dynamic skill_active/1.
+:- dynamic skill_active/2.
 :- dynamic temp_attack/2.
 :- dynamic enemy/1.
 
@@ -48,7 +48,8 @@ use_skill(CharName) :-
     character(CharName, CharRole, _, _, _, _),
     role(CharRole, _, Cooldown),
     use_skill(CharRole, CharName),
-    assert(skill_active(CharName)),
+    retractall(skill_active(CharName, _)),
+    assert(skill_active(CharName, true)),
     retractall(cooldown(CharName, _)),
     assert(cooldown(CharName, Cooldown)).
 

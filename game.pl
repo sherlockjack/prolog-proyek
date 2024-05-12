@@ -5,7 +5,7 @@
 :- dynamic output/1.
 
 generate_stats(Atk, Def, Health, Role) :-
-    random(3000, 5000, Atk),
+    random(1500, 2500, Atk),
     random(500, 1000, Def),
     random(10000, 15000, Health),
     findall(SelectRole, role(SelectRole, _, _), Roles),
@@ -14,7 +14,8 @@ generate_stats(Atk, Def, Health, Role) :-
 create_character(Name) :-
     generate_stats(Atk, Def, Health, Role),
     get_all_items(Atk, Def, Health, ItemList),
-    assert(character(Name, Role, Atk, Def, Health, ItemList)).
+    assert(character(Name, Role, Atk, Def, Health, ItemList)),
+    assert(skill_active(Name, false)).
 
 create_player(Name) :-
     create_character(Name),
@@ -37,16 +38,16 @@ turn_off_skills(CharName) :-
     get_other_name(CharName, OtherName),
     character(CharName, CharRole, _, _, _, _),
     character(OtherName, OtherRole, _, _, _, _),
-    (CharRole == warrior -> retractall(skill_active(CharName)) ; true),
-    ((OtherRole == shielder ; OtherRole == archer) -> retractall(skill_active(OtherName)) ; true).
+    (CharRole == warrior -> (retractall(skill_active(CharName, _)),  assert(skill_active(CharName, false))); true),
+    ((OtherRole == shielder ; OtherRole == archer) -> (retractall(skill_active(OtherName, _)),  assert(skill_active(OtherName, false))) ; true).
 
 attack(AttackerName, DefenderName) :-
     character(AttackerName, AttackerRole, AttackerAtk, _, _, _),
     character(DefenderName, DefenderRole, DefenderAtk, DefenderDef, DefenderHealth, DefenderItems),
-    ((DefenderRole == shielder, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, ModifiedDef = AttackerAtk);
-    (AttackerRole == warrior, skill_active(AttackerName))->(ModifiedAtk is AttackerAtk * 1.5, ModifiedDef = DefenderDef);
-    (DefenderRole == archer, skill_active(DefenderName))->(ModifiedAtk = AttackerAtk, divmod(DefenderDef,2,ModifiedDef,_)); 
-    (ModifiedAtk = AttackerAtk, ModifiedDef = DefenderDef)),
+    ((AttackerRole == warrior, skill_active(AttackerName, true))->(ModifiedAtk is AttackerAtk * 1.5);ModifiedAtk = AttackerAtk),
+    ((DefenderRole == shielder, skill_active(DefenderName, true))->(ModifiedDef = AttackerAtk);
+    (DefenderRole == archer, skill_active(DefenderName, true))->(divmod(DefenderDef,2,ModifiedDef,_)); 
+    (ModifiedDef = DefenderDef)),
     Damage is max(ModifiedAtk - ModifiedDef, 0),
     NewHealth is DefenderHealth - Damage,
     retractall(character(DefenderName, _, _, _, _, _)),
@@ -68,7 +69,7 @@ attack_html(CharName) -->
 use_item(CharName, ItemName) :-
     character(CharName, CharRole, CharAtk, CharDef, CharHealth, CharItems),
     member(item(ItemName, Effect), CharItems),
-    select(item(ItemName, Effect), CharItems, RemainingItems),
+    once(select(item(ItemName, Effect), CharItems, RemainingItems)),
 
     (Effect = increase('Attack', Value) ->
         NewAtk is CharAtk + Value,
@@ -86,7 +87,6 @@ use_item(CharName, ItemName) :-
         assert(character(CharName, CharRole, CharAtk, CharDef, NewHealth, RemainingItems)),
         swritef(Output, '%w used %w. Health increased to %d.\n', [CharName, ItemName, NewHealth])
     ),
-    assert(output(Output)),
     assert(temp_item(CharName, Output)),
     turn_off_skills(CharName).
 

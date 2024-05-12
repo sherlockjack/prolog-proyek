@@ -70,45 +70,47 @@ form_handler(Request) :-
                     reply_html_page(
                         title('Game Actions'),
                         [
-                            \game_form,
                             h2('Attacking Phase'),
                             h3('Your Action'),
                             \use_skill_html(PlayerName),
                             h2('Result'),
-                            \show_results(PlayerName, EnemyName)
+                            \show_results(PlayerName, EnemyName),
+                            \game_form
                         ]
                     )
                 )
             ;   ((   Action == 'attack'
                 ->  (
                         attack(PlayerName, EnemyName),
-                        Func = attack_html(PlayerName)
+                        temp_attack(PlayerName, Output1)
                     )
                 ;   Action == 'use_item'
                 ->  (
                         use_item(PlayerName, ItemName),
-                        Func = use_item_html(PlayerName)
+                        temp_item(PlayerName, Output1)
                     )
                 ),
-                enemy_action(EnemyAction, UseSkill),
-                ((UseSkill == true) -> Func2 = (use_skill_html(EnemyName)); (Func2 = empty_html)),
+                character(EnemyName, _, _, _, EnemyHealth, _),
+                (EnemyHealth > 0 -> (enemy_action(EnemyAction, UseSkill),
+                ((UseSkill == true) -> (use_skill(EnemyName), use_skill_temp(EnemyName, Output2)); Output2 = ''),
+                EnemyAction,
                 (
-                    (EnemyAction == use_item(_, _)) -> (Func3 = use_item_html(EnemyName)); Func3 = (attack_html(EnemyName))
-                ),
+                    (EnemyAction = use_item(_, _)) -> temp_item(EnemyName, Output3); temp_attack(EnemyName, Output3)
+                ));(swritef(Output2, '%w is defeated!', [EnemyName]),Output3='')),
                 reply_html_page(
                     title('Game Actions'),
                     [
                         \game_over,
-                        \game_form,
                         h2('Attacking Phase'),
                         h3('Your Action'),
-                        \Func,
+                        p(Output1),
                         h3('Enemy Action'),
-                        \Func2,
-                        \Func3,
+                        p(Output2),
+                        p(Output3),
                         h2('Result'),
-                        \check_health,
-                        \show_results(PlayerName, EnemyName)
+                        \show_results(PlayerName, EnemyName),
+                        \game_form,
+                        \check_health
                     ]
                 ))
             )
@@ -116,8 +118,8 @@ form_handler(Request) :-
     ;   reply_html_page(
             title('Game Actions'),
             [
-                \game_form,
-                \show_results(PlayerName, EnemyName)
+                \show_results(PlayerName, EnemyName),
+                \game_form
             ]
         )
     ).
